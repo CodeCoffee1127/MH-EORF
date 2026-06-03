@@ -36,6 +36,48 @@ This repository focuses on **Section 3.2, Checkpoint-level Observable Representa
 
 ---
 
+## Experimental Methodology
+
+The full study employs Text-to-SQL structured reasoning tasks as the experimental carrier. The Agent reasoning process for sample $i$ is represented as a checkpoint sequence $p_{i,1:T_i}$. At each checkpoint $p_{i,t}$, the system records the verification result $v_{i,t}$, historical dependency set $\mathcal{E}^{-}_{i,t}$, and perturbation response record $\mathcal{R}_{i,t}$. These observation planes are used to generate diagnostic metrics such as verification consistency, verification entropy, dependency polarity, and historical risk memory.
+
+### Model Architecture
+
+The main model retains a dual-channel design separating the **direction channel** and the **residual channel**. The deep nesting boundary is excluded from the main model input and is used only for subsequent complexity stratification analysis and case selection.
+
+**Table 1(a): Main model input, state dimensions, and parameter scale**
+
+| Channel | Dimension | Fields |
+|---------|-----------|--------|
+| $x^{dir}_{i,t}$ | 5 | $1-A_{i,t}$, $H_{i,t}$, $\rho_{i,t}$, $I^-_{i,t}$, $I^+_{i,t}$ |
+| $x^{res}_{i,t}$ | 11 | $U_{i,t}$, $\Delta(1-A_{i,t})$, $\Delta H_{i,t}$, $\log(1+t)$, phase one-hot, complexity tier one-hot |
+| $s_{i,t}$ | 8 | Recursive reliability state |
+| **Parameters** | **167** | Learnable model weights |
+
+The direction channel preserves variables with explicit risk directions, while the residual channel preserves local changes and context information. The recursive reliability state uses an 8-dimensional representation. The model contains 167 learnable weight parameters, corresponding to 10,788 full checkpoint observation rows (observation rows / parameter ratio $\approx 64.6$).
+
+### Data Splits and Evaluation
+
+The experiment uses three mutually exclusive subsets: **train-dev**, **cal-dev**, and **heldout**.
+
+- **train-dev**: Used for learning model parameters, standardization parameters, and class weights.
+- **cal-dev**: Used for fitting calibration mappings and freezing multi-horizon thresholds.
+- **heldout**: Used exclusively for final evaluation under frozen rules.
+
+External measurement diagnosis, early warning performance evaluation, and structural ablation are all conducted under the same observation and decision boundaries.
+
+**Table 1(b): Data splits and multi-horizon label statistics**
+
+| Split | Samples | Total Rows | h=1 Valid | h=1 Pos | h=1 Rate | h=2 Valid | h=2 Pos | h=2 Rate | h=3 Valid | h=3 Pos | h=3 Rate |
+|-------|---------|------------|-----------|---------|----------|-----------|---------|----------|-----------|---------|----------|
+| train-dev | 324 | 3,928 | 1,475 | 189 | 0.1281 | 1,315 | 310 | 0.2357 | 1,138 | 374 | 0.3286 |
+| cal-dev | 214 | 2,571 | 973 | 127 | 0.1305 | 863 | 202 | 0.2341 | 735 | 235 | 0.3197 |
+| heldout | 365 | 4,289 | 1,626 | 210 | 0.1292 | 1,436 | 339 | 0.2361 | 1,227 | 398 | 0.3244 |
+| **Total** | **903** | **10,788** | **4,074** | **526** | **0.1291** | **3,614** | **851** | **0.2355** | **3,100** | **1,007** | **0.3248** |
+
+The multi-horizon positive rate increases from 0.1291 at $h=1$ to 0.3248 at $h=3$. The label distributions across the three splits are consistent, supporting independent transfer evaluation on the heldout set.
+
+---
+
 ## Observation Plane Definition
 
 For sample *i*, the observation plane is represented as:
@@ -193,7 +235,7 @@ submission/figshare/SL-RDAF-data-v1
 
 **DOI:** to be inserted after figshare reservation/publication.
 
-The local figshare package contains **95 files** and is approximately **127 MB** after anonymization and checksum generation.
+The local figshare package contains **95 files** and is approximately **127 MB** after anonymization and checksum generation. The dataset comprises **903 samples** and **10,788 observation rows** (AST-level extraction) split into train-dev (324 samples), cal-dev (214 samples), and heldout (365 samples).
 
 ---
 
