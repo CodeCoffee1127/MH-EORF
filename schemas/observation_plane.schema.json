@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObservationPlane",
+  "description": "Complete observation plane for a sample (Section 3.2)",
+  "type": "object",
+  "required": ["sample_id", "observation_plane", "protocol_hash", "leakage_check"],
+  "properties": {
+    "sample_id": {
+      "type": "string",
+      "description": "Unique sample identifier"
+    },
+    "protocol_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "description": "Protocol hash (SHA256)"
+    },
+    "observation_plane": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["p", "v", "E_minus", "R"],
+        "properties": {
+          "p": {
+            "$ref": "checkpoint.schema.json",
+            "description": "Checkpoint"
+          },
+          "v": {
+            "type": "array",
+            "items": {
+              "$ref": "verification_result.schema.json"
+            },
+            "description": "Verification results for this checkpoint"
+          },
+          "E_minus": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Historical dependency set"
+          },
+          "R": {
+            "type": "array",
+            "items": {
+              "$ref": "perturbation_response.schema.json"
+            },
+            "description": "Perturbation responses for this checkpoint"
+          }
+        }
+      },
+      "description": "Ordered list of observation records (by t)"
+    },
+    "leakage_check": {
+      "type": "object",
+      "required": [
+        "future_checkpoint_used",
+        "tau_used",
+        "final_label_used",
+        "horizon_label_used",
+        "downstream_feature_used"
+      ],
+      "properties": {
+        "future_checkpoint_used": {
+          "type": "boolean",
+          "description": "Whether future checkpoints were used"
+        },
+        "tau_used": {
+          "type": "boolean",
+          "description": "Whether tau_i was used"
+        },
+        "final_label_used": {
+          "type": "boolean",
+          "description": "Whether final execution label was used"
+        },
+        "horizon_label_used": {
+          "type": "boolean",
+          "description": "Whether horizon label y_i_t_h was used"
+        },
+        "downstream_feature_used": {
+          "type": "boolean",
+          "description": "Whether downstream features (A_i_t, H_i_t, etc.) were used"
+        }
+      },
+      "description": "Data leakage check results"
+    }
+  },
+  "additionalProperties": false
+}

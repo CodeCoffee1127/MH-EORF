@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VerificationResult",
+  "description": "Result of applying a verification rule to a checkpoint (Section 3.2)",
+  "type": "object",
+  "required": [
+    "sample_id",
+    "checkpoint_id",
+    "t",
+    "rule_id",
+    "rule_type",
+    "trigger",
+    "passed",
+    "unverifiable",
+    "message",
+    "rule_library_version",
+    "protocol_hash"
+  ],
+  "properties": {
+    "sample_id": {
+      "type": "string",
+      "description": "Unique sample identifier"
+    },
+    "checkpoint_id": {
+      "type": "string",
+      "description": "Checkpoint identifier"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Checkpoint sequence number"
+    },
+    "rule_id": {
+      "type": "string",
+      "description": "Verification rule identifier"
+    },
+    "rule_type": {
+      "type": "string",
+      "enum": [
+        "syntax",
+        "type",
+        "execution_side_consistency",
+        "other"
+      ],
+      "description": "Type of verification rule"
+    },
+    "trigger": {
+      "description": "Rule trigger (what triggered this rule)",
+      "anyOf": [
+        { "type": "object" },
+        { "type": "string" },
+        { "type": "array" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "passed": {
+      "type": "boolean",
+      "description": "Whether the checkpoint passed this rule"
+    },
+    "unverifiable": {
+      "type": "boolean",
+      "description": "Whether the checkpoint is unverifiable (not a verified failure)"
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable verification message"
+    },
+    "rule_library_version": {
+      "type": ["string", "null"],
+      "description": "Rule library version (may be null if not confirmed)"
+    },
+    "protocol_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "description": "Protocol hash (SHA256)"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata",
+      "default": {}
+    }
+  },
+  "additionalProperties": false
+}

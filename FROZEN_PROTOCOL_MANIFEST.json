@@ -1,0 +1,180 @@
+{
+  "manifest_name": "SL-RDAF Section 3.2 Observation Protocol Manifest",
+  "manifest_version": "v1.0-draft",
+  "created_at": "2026-06-03T00:00:00+08:00",
+  "project_root": "D:\\SL-RDAF",
+  "old_project_root": "D:\\SL-RDAF\\Material\\ExternalFalsifiableMeasurementforSubmission",
+  "paper": {
+    "title": "Checkpoint-Level Multi-Horizon Reliability Diagnosis for LLM-Based Agent Systems in Industrial IoT",
+    "section_scope": "Section 3.2 Checkpoint-level Observable Representation",
+    "observation_plane_symbol": "O_i = {(p_i,t, v_i,t, E_minus_i,t, R_i,t)}"
+  },
+  "scope": {
+    "included": [
+      "checkpoint_sequence_construction",
+      "verification_result_generation",
+      "dependency_set_E_minus_extraction",
+      "perturbation_response_record_generation",
+      "observation_plane_assembly"
+    ],
+    "excluded": [
+      "diagnostic_feature_construction",
+      "A_i_t",
+      "H_i_t",
+      "I_plus",
+      "I_minus",
+      "rho",
+      "x_dir",
+      "x_res",
+      "recursive_reliability_state",
+      "multi_horizon_training",
+      "calibration",
+      "threshold_selection",
+      "heldout_evaluation",
+      "visualization"
+    ]
+  },
+  "determinism": {
+    "temperature": {
+      "final_value": 0,
+      "status": "frozen",
+      "source": "paper_protocol_requirement",
+      "legacy_value": null,
+      "note": "Old project did not explicitly freeze temperature; SL-RDAF requires deterministic generation."
+    },
+    "random_seed": {
+      "final_value": 20260528,
+      "status": "frozen_or_audit_confirmed",
+      "source": "D:\\SL-RDAF\\outputs\\training\\train_config_frozen.json",
+      "legacy_value": 42,
+      "conflict_resolution": "Use SL-RDAF final value; old project seed is legacy default.",
+      "note": "Used for deterministic observation-plane construction and perturbation sampling unless a more specific final observation seed is found."
+    }
+  },
+  "llm": {
+    "llm_version": {
+      "final_value": null,
+      "status": "requires_confirmation",
+      "legacy_candidate": "qwen-turbo",
+      "legacy_source": "D:\\SL-RDAF\\Material\\ExternalFalsifiableMeasurementforSubmission\\configs\\experiment_config.yaml",
+      "usage_policy": "Do not call LLM during observation-plane construction unless raw traces are missing and the user confirms the final model.",
+      "note": "Legacy project used qwen-turbo, but SL-RDAF final protocol does not confirm it. Do not call LLM in observation-plane construction unless raw traces are missing and user confirms the model."
+    }
+  },
+  "verification": {
+    "verifier_mode": "external_rule_based",
+    "constraints": [
+      "syntax",
+      "type",
+      "execution_side_consistency"
+    ],
+    "unverifiable_policy": "mark_unverifiable_true_do_not_force_false",
+    "rule_library_version": {
+      "final_value": null,
+      "status": "derived_provenance_only_requires_confirmation",
+      "derived_provenance_id": "legacy_rules_sha256_72b341a9063d",
+      "rule_files": [
+        {
+          "path": "D:\\SL-RDAF\\Material\\ExternalFalsifiableMeasurementforSubmission\\code\\verifier\\constraint_rules.py",
+          "sha256": "72b341a9063d8ae76ea06d4ee3a0a260f9482b9908eaca04e4e4ac74776958f3"
+        },
+        {
+          "path": "D:\\SL-RDAF\\Material\\ExternalFalsifiableMeasurementforSubmission\\code\\verifier\\vsp_verifier.py",
+          "sha256": "0cb791325e3479cc0feb7cd47db0713696a44817c944b230ce989222d3ab72a2"
+        }
+      ],
+      "note": "No explicit rule-library version was found. The derived provenance ID is for reproducibility tracking only, not a paper-declared version."
+    },
+    "verification_repeats": {
+      "final_value": null,
+      "status": "requires_confirmation"
+    },
+    "N": {
+      "final_value": null,
+      "status": "requires_confirmation"
+    },
+    "M": {
+      "final_value": null,
+      "status": "requires_confirmation"
+    },
+    "legacy_related_values": {
+      "n_candidates_per_step": 30,
+      "source": "D:\\SL-RDAF\\Material\\ExternalFalsifiableMeasurementforSubmission\\configs\\experiment_config.yaml",
+      "note": "Related to VSP candidate generation, not confirmed as verification repeat count."
+    }
+  },
+  "perturbation": {
+    "perturbation_family_version": {
+      "final_value": null,
+      "status": "incomplete_requires_confirmation",
+      "derived_provenance_id": "legacy_perturbation_sha256_36acc45cf00a",
+      "legacy_partial_definition": {
+        "inject_ratio": 0.2,
+        "source": "D:\\SL-RDAF\\Material\\ExternalFalsifiableMeasurementforSubmission\\configs\\experiment_config.yaml",
+        "note": "Only inject_ratio found; complete perturbation family definition not confirmed."
+      },
+      "note": "Partial legacy perturbation settings were found, but complete SL-RDAF perturbation-family definition is not confirmed."
+    },
+    "random_seed": 20260528,
+    "payload_storage_policy": "store_hash_or_safe_summary_only"
+  },
+  "splits": {
+    "policy": "train_dev_cal_dev_heldout_frozen",
+    "train_dev": {
+      "samples": 324,
+      "rows": 3928
+    },
+    "cal_dev": {
+      "samples": 214,
+      "rows": 2571
+    },
+    "heldout": {
+      "samples": 365,
+      "rows": 4289,
+      "policy": "no_refit_no_calibration_no_threshold_selection"
+    },
+    "total_samples": 903,
+    "total_observation_rows": 10788,
+    "legacy_value": "[214, 320]",
+    "conflict_resolution": "Use SL-RDAF three-way split; legacy binary split is obsolete.",
+    "source": [
+      "D:\\SL-RDAF\\Material\\SL-RDAF_algorithm_framework_phase1_phase2_phase3.md",
+      "D:\\SL-RDAF\\data\\原始数据\\dataset_warning_fixed\\README_dataset_v1.0.md",
+      "D:\\SL-RDAF\\outputs\\diagnostics_4_2\\agent_cluster_package\\README_for_agent_cluster.md"
+    ]
+  },
+  "observation_boundary": {
+    "allowed_information": [
+      "current_checkpoint",
+      "historical_checkpoints",
+      "schema_or_database_information_available_at_verification_time",
+      "external_rule_results",
+      "predecessor_perturbation_responses"
+    ],
+    "forbidden_information": [
+      "future_checkpoints",
+      "tau_i",
+      "first_degradation",
+      "final_execution_label",
+      "endpoint_accuracy",
+      "execution_accuracy",
+      "y_i_t_h",
+      "calibrated_risk",
+      "model_prediction",
+      "heldout_metric"
+    ],
+    "leakage_policy": "fail_closed"
+  },
+  "outputs": {
+    "primary": "observation_planes.jsonl",
+    "auxiliary": [
+      "checkpoints.jsonl",
+      "verification_results.jsonl",
+      "dependency_sets.jsonl",
+      "perturbation_responses.jsonl",
+      "observation_plane_build_report.json",
+      "observation_plane_validation_report.json"
+    ]
+  },
+  "protocol_hash": "cfbcf95275899c462a6694b240df3f9679a0051a061403f27e94c041c816afaf"
+}

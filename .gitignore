@@ -1,0 +1,95 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+.venv/
+.venv_sl_rdaf/
+venv/
+env/
+ENV/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+credentials/
+token*
+*token*
+*api_key*
+*apikey*
+*password*
+*passwd*
+*secret*
+
+# Local data and large artifacts
+data/
+outputs/
+artifacts/
+submission/
+Material/
+heldout/
+splits_60_40/
+PASS/
+
+# Archives and binaries
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.onnx
+*.bin
+*.parquet
+*.sqlite
+*.db
+
+# Logs
+*.log
+logs/
+
+# Temporary reports generated during local packaging
+FIGSHARE_PACKAGE_REPORT.md
+
+# Old project legacy scripts (not part of §3.2 core)
+env_check_sl_rdaf.py
+extract_fig8_all_text.py
+extract_fig8_text.py
+fig8_text_output.txt
+make_60_40_splits.py
+modify_fig8_pdf.py
+run_ablation_study.py
+run_all_figs.py
+run_all_figs_pathlib.py
+run_baseline_comparison.py
+run_figs.bat
+run_section_45_diagnostics.py
+prepare_figshare_pkg.py
+migration_candidates.json
+SKELETON_CREATION_REPORT.md

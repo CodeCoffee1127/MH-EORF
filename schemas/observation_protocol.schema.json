@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ObservationProtocol",
+  "description": "Protocol configuration for Section 3.2 Observation Plane Construction",
+  "type": "object",
+  "required": [
+    "manifest_name",
+    "manifest_version",
+    "protocol_hash",
+    "determinism",
+    "scope",
+    "observation_boundary"
+  ],
+  "properties": {
+    "manifest_name": {
+      "type": "string",
+      "description": "Manifest name"
+    },
+    "manifest_version": {
+      "type": "string",
+      "description": "Manifest version"
+    },
+    "protocol_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "description": "Protocol hash (SHA256)"
+    },
+    "scope": {
+      "type": "object",
+      "required": ["included", "excluded"],
+      "properties": {
+        "included": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Included scope items"
+        },
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Excluded scope items"
+        }
+      }
+    },
+    "determinism": {
+      "type": "object",
+      "required": ["temperature", "random_seed"],
+      "properties": {
+        "temperature": {
+          "type": ["integer", "object"],
+          "description": "Temperature (must be 0)"
+        },
+        "random_seed": {
+          "type": ["integer", "object"],
+          "description": "Random seed"
+        }
+      }
+    },
+    "llm": {
+      "type": "object",
+      "properties": {
+        "llm_version": {
+          "description": "LLM version (may be null if not confirmed)",
+          "anyOf": [
+            { "type": "string" },
+            { "type": "object" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "properties": {
+        "verifier_mode": {
+          "type": "string"
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rule_library_version": {
+          "description": "Rule library version (may be null)"
+        },
+        "verification_repeats": {
+          "description": "Verification repeats (may be null)"
+        },
+        "N": {
+          "description": "N parameter (may be null)"
+        },
+        "M": {
+          "description": "M parameter (may be null)"
+        }
+      }
+    },
+    "perturbation": {
+      "type": "object",
+      "properties": {
+        "perturbation_family_version": {
+          "description": "Perturbation family version (may be null)"
+        },
+        "random_seed": {
+          "type": "integer"
+        },
+        "payload_storage_policy": {
+          "type": "string"
+        }
+      }
+    },
+    "splits": {
+      "type": "object",
+      "properties": {
+        "train_dev": {
+          "type": "object"
+        },
+        "cal_dev": {
+          "type": "object"
+        },
+        "heldout": {
+          "type": "object"
+        },
+        "total_samples": {
+          "type": "integer"
+        },
+        "total_observation_rows": {
+          "type": "integer"
+        }
+      }
+    },
+    "observation_boundary": {
+      "type": "object",
+      "required": ["allowed_information", "forbidden_information"],
+      "properties": {
+        "allowed_information": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbidden_information": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "leakage_policy": {
+          "type": "string"
+        }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "type": "string"
+        },
+        "auxiliary": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

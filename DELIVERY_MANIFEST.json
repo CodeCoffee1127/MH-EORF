@@ -1,0 +1,65 @@
+{
+  "completed_steps": [
+    "Prompt 2: Protocol Freeze",
+    "Prompt 3: Code Skeleton Creation",
+    "Prompt 4: Checkpoint Extraction Migration",
+    "Prompt 5: Verification Rule Engine Migration",
+    "Prompt 6: Dependency Extraction Migration",
+    "Prompt 7: Perturbation Response Migration",
+    "Prompt 8: Observation Plane Assembly & CLI",
+    "Prompt 9A: Boundary Cleanup & Full Build Attempt",
+    "Prompt 9B: README & Reproduction Guide",
+    "Prompt 10: Figshare Package Preparation"
+  ],
+  "code_paths": [
+    "src/slrdaf/observation/checkpoints.py",
+    "src/slrdaf/observation/verification.py",
+    "src/slrdaf/observation/dependencies.py",
+    "src/slrdaf/observation/perturbations.py",
+    "src/slrdaf/observation/observation_plane.py",
+    "src/slrdaf/observation/protocol.py",
+    "src/slrdaf/observation/io.py",
+    "src/slrdaf/observation/leakage.py",
+    "experiments/build_observation_plane.py",
+    "experiments/validate_observation_plane.py"
+  ],
+  "artifact_paths": [
+    "artifacts/observation_plane/observation_planes.jsonl",
+    "artifacts/observation_plane/checkpoints.jsonl",
+    "artifacts/observation_plane/verification_results.jsonl",
+    "artifacts/observation_plane/dependency_sets.jsonl",
+    "artifacts/observation_plane/perturbation_responses.jsonl",
+    "artifacts/observation_plane_full/observation_planes.jsonl",
+    "artifacts/observation_plane_full/checkpoints.jsonl",
+    "artifacts/observation_plane_full/verification_results.jsonl",
+    "artifacts/observation_plane_full/perturbation_responses.jsonl"
+  ],
+  "figshare_package_path": "submission/figshare/SL-RDAF-data-v1",
+  "zip_path": null,
+  "test_status": {
+    "py_compile": "pass",
+    "pytest": "64/64 passed",
+    "preview_validation": "pass (5/5 records)",
+    "full_validation": "pass (903/903 records)",
+    "checksum_validation": "pass"
+  },
+  "full_build_status": "partial_success",
+  "full_build_details": {
+    "samples": 903,
+    "checkpoints": 3553,
+    "expected_checkpoints": 10788,
+    "note": "Deterministic regex segmentation vs AST-level extraction"
+  },
+  "unresolved_protocol_items": [
+    "llm_version",
+    "rule_library_version",
+    "perturbation_family_version",
+    "verification_repeats",
+    "N",
+    "M"
+  ],
+  "warnings": [
+    "Dataset mode produces 3,553 checkpoints instead of 10,788 due to lightweight regex segmentation. AST-level extraction requires additional dependencies.",
+    "Protocol items (llm_version, N, M, etc.) remain unconfirmed and are preserved as null in manifest."
+  ]
+}

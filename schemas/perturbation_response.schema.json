@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PerturbationResponse",
+  "description": "Response to a perturbation applied to a predecessor checkpoint (Section 3.2)",
+  "type": "object",
+  "required": [
+    "sample_id",
+    "checkpoint_id",
+    "t",
+    "perturbed_predecessor_id",
+    "perturbation_family",
+    "perturbation_id",
+    "perturbation_payload_hash",
+    "before_verification",
+    "after_verification",
+    "response_summary",
+    "protocol_hash"
+  ],
+  "properties": {
+    "sample_id": {
+      "type": "string",
+      "description": "Unique sample identifier"
+    },
+    "checkpoint_id": {
+      "type": "string",
+      "description": "Target checkpoint identifier"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Checkpoint sequence number"
+    },
+    "perturbed_predecessor_id": {
+      "type": "string",
+      "description": "Predecessor checkpoint ID that was perturbed"
+    },
+    "perturbation_family": {
+      "type": "string",
+      "description": "Perturbation family identifier"
+    },
+    "perturbation_id": {
+      "type": "string",
+      "description": "Unique perturbation identifier"
+    },
+    "perturbation_payload_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "description": "SHA256 hash of perturbation payload (not raw payload)"
+    },
+    "before_verification": {
+      "description": "Verification result before perturbation",
+      "anyOf": [
+        { "type": "object" },
+        { "type": "string" },
+        { "type": "array" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "after_verification": {
+      "description": "Verification result after perturbation",
+      "anyOf": [
+        { "type": "object" },
+        { "type": "string" },
+        { "type": "array" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "response_summary": {
+      "type": "object",
+      "description": "Summary of perturbation response (no I_plus/I_minus)"
+    },
+    "protocol_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "description": "Protocol hash (SHA256)"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata",
+      "default": {}
+    }
+  },
+  "additionalProperties": false
+}

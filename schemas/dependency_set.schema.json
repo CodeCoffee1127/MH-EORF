@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DependencySet",
+  "description": "Historical dependency set E_minus for a checkpoint (Section 3.2)",
+  "type": "object",
+  "required": [
+    "sample_id",
+    "checkpoint_id",
+    "t",
+    "E_minus",
+    "dependency_edges",
+    "extraction_method",
+    "protocol_hash"
+  ],
+  "properties": {
+    "sample_id": {
+      "type": "string",
+      "description": "Unique sample identifier"
+    },
+    "checkpoint_id": {
+      "type": "string",
+      "description": "Checkpoint identifier"
+    },
+    "t": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Checkpoint sequence number"
+    },
+    "E_minus": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of predecessor checkpoint IDs (historical only)"
+    },
+    "dependency_edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["predecessor_id", "successor_id", "dependency_type"],
+        "properties": {
+          "predecessor_id": {
+            "type": "string",
+            "description": "Predecessor checkpoint ID"
+          },
+          "successor_id": {
+            "type": "string",
+            "description": "Successor checkpoint ID"
+          },
+          "dependency_type": {
+            "type": "string",
+            "description": "Type of dependency"
+          },
+          "evidence": {
+            "description": "Evidence for this dependency",
+            "anyOf": [
+              { "type": "object" },
+              { "type": "string" },
+              { "type": "array" },
+              { "type": "number" },
+              { "type": "boolean" },
+              { "type": "null" }
+            ]
+          }
+        }
+      },
+      "description": "Dependency edges"
+    },
+    "extraction_method": {
+      "type": "string",
+      "description": "Method used to extract dependencies"
+    },
+    "protocol_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "description": "Protocol hash (SHA256)"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata",
+      "default": {}
+    }
+  },
+  "additionalProperties": false
+}
