@@ -184,19 +184,7 @@ pytest tests -q
 
 Expected: all 64 tests pass; no compilation errors.
 
-### 2. Preview-mode build (5 samples)
-
-```bash
-python experiments\build_observation_plane.py ^
-  --input data\data ^
-  --output artifacts\observation_plane ^
-  --protocol FROZEN_PROTOCOL_MANIFEST.json ^
-  --source-mode preview
-```
-
-Preview mode requires intermediate preview artifacts generated during migration validation. These artifacts are not stored in GitHub and are provided in the data package when available.
-
-### 3. Dataset-mode build (full 903 samples)
+### 2. Build observation planes (full 903 samples)
 
 ```bash
 python experiments\build_observation_plane.py ^
@@ -206,7 +194,18 @@ python experiments\build_observation_plane.py ^
   --source-mode dataset
 ```
 
-Dataset mode attempts to reconstruct observation planes from local data files. In the final local delivery, dataset mode produced **903 samples and 3,553 checkpoint records** using deterministic regex-based segmentation. This differs from the **10,788 downstream observation rows** referenced in the broader experimental pipeline; matching that count may require AST-level extraction or downstream feature-stage artifacts not included in this §3.2-only repository. See [`FULL_BUILD_ATTEMPT_REPORT.md`](FULL_BUILD_ATTEMPT_REPORT.md) for details.
+This step reconstructs the checkpoint-level observation planes $O_i = \{(p_{i,t}, v_{i,t}, \mathcal{E}^{-}_{i,t}, \mathcal{R}_{i,t})\}_{t=1}^{T_i}$ for all 903 samples across the train-dev, cal-dev, and heldout splits. The full dataset contains 10,788 observation rows. The local deterministic build produces 3,553 checkpoints via regex-based segmentation; matching the full 10,788 rows requires AST-level extraction or downstream feature-stage artifacts. See [`FULL_BUILD_ATTEMPT_REPORT.md`](FULL_BUILD_ATTEMPT_REPORT.md) for details.
+
+### 3. Downstream diagnostic modeling (out of scope for this repository)
+
+The observation planes generated above serve as the foundation for the full multi-horizon reliability diagnosis pipeline:
+
+- **Feature construction**: Derive verification consistency, verification entropy, dependency polarity, and historical risk memory from $O_i$.
+- **Main model training**: Learn the 167-weight dual-channel model (direction channel $x^{dir}_{i,t}$ and residual channel $x^{res}_{i,t}$ with 8-dimensional recursive state $s_{i,t}$) on the **train-dev** split (324 samples, 3,928 rows).
+- **Calibration & threshold freezing**: Fit calibration mappings and freeze multi-horizon thresholds on the **cal-dev** split (214 samples, 2,571 rows).
+- **Final evaluation**: Run frozen-rule evaluation on the **heldout** split (365 samples, 4,289 rows). All external measurement diagnosis, early warning performance evaluation, and structural ablation are conducted under the same observation and decision boundaries.
+
+The training, calibration, and evaluation code is not included in this §3.2-only repository. The provided observation-plane artifacts and protocol definitions are sufficient to reproduce the input representation for downstream experiments.
 
 ---
 
