@@ -155,7 +155,7 @@ The observation-plane construction follows a frozen protocol to ensure determini
 |-----------|-------|--------|
 | `temperature` | `0` | Frozen |
 | `random_seed` | `20260528` | Frozen |
-| `protocol_hash` | `cfbcf95275899c462a6694b240df3f9679a0051a061403f27e94c041c816afaf` | Verified |
+| `protocol_hash` | `52e2ab6a1388caa639e49669054d22ab9af6fd10ea4d7f15d994538f43d49430` | Verified |
 | `split policy` | train-dev / cal-dev / heldout | Frozen |
 | **Full build status** | **903 samples, 3,553 checkpoints** | Deterministic regex-based segmentation |
 | **Preview build status** | **5 samples, 21 checkpoints, 63 verification results, 21 dependency sets, 52 perturbation responses** | Verified |

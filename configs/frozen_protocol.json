@@ -122,19 +122,39 @@
     "policy": "train_dev_cal_dev_heldout_frozen",
     "train_dev": {
       "samples": 324,
-      "rows": 3928
+      "rows": 3928,
+      "multi_horizon": {
+        "h1": { "valid_rows": 1475, "positive": 189, "positive_rate": 0.1281 },
+        "h2": { "valid_rows": 1315, "positive": 310, "positive_rate": 0.2357 },
+        "h3": { "valid_rows": 1138, "positive": 374, "positive_rate": 0.3286 }
+      }
     },
     "cal_dev": {
       "samples": 214,
-      "rows": 2571
+      "rows": 2571,
+      "multi_horizon": {
+        "h1": { "valid_rows": 973, "positive": 127, "positive_rate": 0.1305 },
+        "h2": { "valid_rows": 863, "positive": 202, "positive_rate": 0.2341 },
+        "h3": { "valid_rows": 735, "positive": 235, "positive_rate": 0.3197 }
+      }
     },
     "heldout": {
       "samples": 365,
       "rows": 4289,
-      "policy": "no_refit_no_calibration_no_threshold_selection"
+      "policy": "no_refit_no_calibration_no_threshold_selection",
+      "multi_horizon": {
+        "h1": { "valid_rows": 1626, "positive": 210, "positive_rate": 0.1292 },
+        "h2": { "valid_rows": 1436, "positive": 339, "positive_rate": 0.2361 },
+        "h3": { "valid_rows": 1227, "positive": 398, "positive_rate": 0.3244 }
+      }
     },
     "total_samples": 903,
     "total_observation_rows": 10788,
+    "multi_horizon_aggregate": {
+      "h1": { "valid_rows": 4074, "positive": 526, "positive_rate": 0.1291 },
+      "h2": { "valid_rows": 3614, "positive": 851, "positive_rate": 0.2355 },
+      "h3": { "valid_rows": 3100, "positive": 1007, "positive_rate": 0.3248 }
+    },
     "legacy_value": "[214, 320]",
     "conflict_resolution": "Use SL-RDAF three-way split; legacy binary split is obsolete.",
     "source": [
@@ -142,6 +162,37 @@
       "D:\\SL-RDAF\\data\\原始数据\\dataset_warning_fixed\\README_dataset_v1.0.md",
       "D:\\SL-RDAF\\outputs\\diagnostics_4_2\\agent_cluster_package\\README_for_agent_cluster.md"
     ]
+  },
+  "model_architecture": {
+    "task": "Text-to-SQL structured reasoning",
+    "channels": {
+      "direction": {
+        "symbol": "x_dir_i_t",
+        "dimension": 5,
+        "fields": ["1-A_i_t", "H_i_t", "rho_i_t", "I_minus_i_t", "I_plus_i_t"],
+        "description": "Preserves variables with explicit risk directions"
+      },
+      "residual": {
+        "symbol": "x_res_i_t",
+        "dimension": 11,
+        "fields": ["U_i_t", "Delta(1-A_i_t)", "Delta_H_i_t", "log(1+t)", "phase_one-hot", "complexity_tier_one-hot"],
+        "description": "Preserves local changes and context information"
+      }
+    },
+    "recursive_state": {
+      "symbol": "s_i_t",
+      "dimension": 8,
+      "description": "Recursive reliability state"
+    },
+    "parameters": {
+      "total": 167,
+      "description": "Learnable model weights"
+    },
+    "observation_rows_per_parameter": 64.6,
+    "deep_nesting_boundary": {
+      "in_model_input": false,
+      "usage": "Complexity stratification analysis and case selection only"
+    }
   },
   "observation_boundary": {
     "allowed_information": [
@@ -176,5 +227,5 @@
       "observation_plane_validation_report.json"
     ]
   },
-  "protocol_hash": "cfbcf95275899c462a6694b240df3f9679a0051a061403f27e94c041c816afaf"
+  "protocol_hash": "52e2ab6a1388caa639e49669054d22ab9af6fd10ea4d7f15d994538f43d49430"
 }
