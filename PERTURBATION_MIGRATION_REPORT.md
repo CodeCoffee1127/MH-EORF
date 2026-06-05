@@ -10,7 +10,7 @@
 
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| `src/slrdaf/observation/perturbations.py` | 增量更新 | 实现 4 个扰动族及 public API |
+| `src/mhiedew/observation/perturbations.py` | 增量更新 | 实现 4 个扰动族及 public API |
 | `experiments/preview_perturbation_responses.py` | 新建 | Perturbation preview 脚本 |
 | `tests/test_perturbation_responses.py` | 新建 | 12 个测试用例 |
 | `docs/migration_perturbation_responses.md` | 新建 | 迁移文档 |
@@ -36,19 +36,19 @@
 | 函数 | 类型 | 说明 |
 |------|------|------|
 | `load_perturbation_families()` | 公开 | 加载 4 个确定性扰动族 |
-| `perturb_checkpoint()` | 公开 | 对前驱 checkpoint 应用扰动 |
-| `generate_perturbation_responses()` | 公开 | 生成所有 checkpoint 的扰动响应 |
+| `perturb_step()` | 公开 | 对前驱 step 应用扰动 |
+| `generate_perturbation_responses()` | 公开 | 生成所有 step 的扰动响应 |
 | `hash_perturbation_payload()` | 公开 | 计算 payload SHA256 |
 | `_perturb_identifier_mask()` | 内部 | identifier mask 扰动 |
 | `_perturb_operator_flip()` | 内部 | operator flip 扰动 |
 | `_perturb_numeric_value()` | 内部 | numeric value shift 扰动 |
 | `_perturb_clause_marker_noise()` | 内部 | clause marker noise 扰动 |
-| `_extract_checkpoint_text()` | 内部 | 提取 checkpoint 文本 |
+| `_extract_step_text()` | 内部 | 提取 step 文本 |
 | `_deterministic_choice()` | 内部 | 确定性选择 |
 | `_summarize_perturbation_payload()` | 内部 | 生成 payload 安全摘要 |
 | `_normalize_verification_summary()` | 内部 | 归一化验证结果摘要 |
-| `_build_checkpoint_lookup()` | 内部 | 构建 checkpoint 查找表 |
-| `_get_dependency_set_for_checkpoint()` | 内部 | 查找 DependencySet |
+| `_build_step_lookup()` | 内部 | 构建 step 查找表 |
+| `_get_dependency_set_for_step()` | 内部 | 查找 DependencySet |
 
 ---
 
@@ -66,10 +66,10 @@
 ## 5. E_minus 约束检查结果
 
 - ✅ 只扰动 E_minus 中的历史 predecessor
-- ✅ 不扰动当前 checkpoint
-- ✅ 不扰动 future checkpoint
-- ✅ 对 E_minus=[] 的 checkpoint 不生成 response
-- ✅ 所有 perturbed_predecessor_id 属于对应 checkpoint 的 E_minus
+- ✅ 不扰动当前 step
+- ✅ 不扰动 future step
+- ✅ 对 E_minus=[] 的 step 不生成 response
+- ✅ 所有 perturbed_predecessor_id 属于对应 step 的 E_minus
 - ✅ predecessor_t < target_t
 
 ---
@@ -137,7 +137,7 @@ $ pytest tests -q
 
 **测试覆盖**:
 - ✅ 第 3 步原有 16 个测试全部通过
-- ✅ 第 4 步新增 6 个 checkpoint extraction 测试全部通过
+- ✅ 第 4 步新增 6 个 step extraction 测试全部通过
 - ✅ 第 5 步新增 10 个 verification rules 测试全部通过
 - ✅ 第 6 步新增 10 个 dependency extraction 测试全部通过
 - ✅ 第 7 步新增 12 个 perturbation responses 测试全部通过
@@ -178,12 +178,12 @@ calibration, threshold, plot, matplotlib, seaborn, Beta, entropy, score, feature
 
 | 文件 | 路径 | 用途 |
 |------|------|------|
-| Checkpoint Preview | `artifacts/observation_debug/checkpoint_sequence_preview.jsonl` | 提供 checkpoint 序列 |
+| Step Preview | `artifacts/observation_debug/step_sequence_preview.jsonl` | 提供 step 序列 |
 | Verification Preview | `artifacts/observation_debug/verification_preview.jsonl` | 提供验证结果 |
 | Dependency Preview | `artifacts/observation_debug/dependency_sets_preview.jsonl` | 提供 E_minus 约束 |
 | Perturbation Preview | `artifacts/observation_debug/perturbation_response_preview.jsonl` | 提供 R_{i,t} 扰动响应 |
 | Perturbation Report | `artifacts/observation_debug/perturbation_response_preview_report.json` | 了解扰动分布 |
-| Perturbations.py | `src/slrdaf/observation/perturbations.py` | 提供 PerturbationResponse dataclass 定义 |
+| Perturbations.py | `src/mhiedew/observation/perturbations.py` | 提供 PerturbationResponse dataclass 定义 |
 | Protocol | `FROZEN_PROTOCOL_MANIFEST.json` | 提供 protocol_hash 和配置 |
 
 ---
@@ -193,13 +193,13 @@ calibration, threshold, plot, matplotlib, seaborn, Beta, entropy, score, feature
 | # | 验收标准 | 状态 |
 |---|---------|------|
 | 1 | `load_perturbation_families` 返回至少 4 个 deterministic families | ✅ 通过 |
-| 2 | `perturb_checkpoint` 不再 raise NotImplementedError | ✅ 通过 |
+| 2 | `perturb_step` 不再 raise NotImplementedError | ✅ 通过 |
 | 3 | `generate_perturbation_responses` 不再 raise NotImplementedError | ✅ 通过 |
 | 4 | `hash_perturbation_payload` 原有测试继续通过 | ✅ 通过 |
 | 5 | 只扰动 E_minus 中的历史 predecessor | ✅ 通过 |
-| 6 | 不扰动当前 checkpoint | ✅ 通过 |
-| 7 | 不扰动 future checkpoint | ✅ 通过 |
-| 8 | 对 E_minus=[] 的 checkpoint 不生成 response | ✅ 通过 |
+| 6 | 不扰动当前 step | ✅ 通过 |
+| 7 | 不扰动 future step | ✅ 通过 |
+| 8 | 对 E_minus=[] 的 step 不生成 response | ✅ 通过 |
 | 9 | 每条 PerturbationResponse 符合 schema | ✅ 通过 |
 | 10 | perturbation_payload_hash 长度 64 | ✅ 通过 |
 | 11 | before/after 只含离散规则摘要，不含 A/H/score/feature | ✅ 通过 |

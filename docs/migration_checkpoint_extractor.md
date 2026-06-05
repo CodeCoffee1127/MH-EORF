@@ -1,7 +1,7 @@
-# Migration: Checkpoint Extractor
+# Migration: Step Extractor
 
-> **创建时间**: 2026-06-03  
-> **步骤**: 第 4 步 — 增量迁移 checkpoint sequence construction  
+> **创建时间**: 2026-06-03
+> **步骤**: 第 4 步 — 增量迁移 step sequence construction
 > **状态**: ✅ 完成
 
 ---
@@ -18,7 +18,7 @@
 |-----------|------|---------|
 | `code/step_extractor/step_extractor.py` | VerifierDrivenStepExtractor 核心逻辑 | ✅ 已阅读，提取 trace step 处理逻辑 |
 | `code/step_extractor/segmentation.py` | StructureParse 结构解析 | ✅ 已阅读，提取 SQL 子句边界判定规则 |
-| `code/step_extractor/schema.py` | StepObject、ParseStatus 定义 | ✅ 已阅读，映射到 Checkpoint dataclass |
+| `code/step_extractor/schema.py` | StepObject、ParseStatus 定义 | ✅ 已阅读，映射到 Step dataclass |
 | `code/step_extractor/bridge_sql_pipeline.py` | clause_records → StepObject 桥接 | ✅ 已阅读，提取 SQL 分段逻辑 |
 | `code/step_extractor/paper_based_step_extractor_reconstruction.py` | 重构助手与 normalize_reasoning_step | ✅ 已阅读，提取字段映射规则 |
 | `code/cpfc/sql_cpfc.py` | CPFC SQL 处理 | ✅ 已阅读，参考 SQL 解析策略 |
@@ -41,16 +41,16 @@
 
 ### 4.1 Trace Step Extraction
 - 从 `steps`, `intermediate_steps`, `raw_trace` 等字段提取结构化步骤
-- 每个 step dict 转成一个 Checkpoint
+- 每个 step dict 转成一个 Step
 - 保留 `legacy_type` 和 `legacy_step_index` 在 metadata 中
 
 ### 4.2 SQL Clause Segmentation
 - 轻量级正则表达式分段（不依赖 sqlparse 等新依赖）
 - 匹配 SQL 关键字：SELECT, FROM, JOIN, WHERE, GROUP BY, ORDER BY, HAVING, LIMIT
-- 每个子句转成一个 Checkpoint
+- 每个子句转成一个 Step
 
-### 4.3 Checkpoint Type Mapping
-| SQL 子句 / 内容特征 | checkpoint_type |
+### 4.3 Step Type Mapping
+| SQL 子句 / 内容特征 | step_type |
 |-------------------|----------------|
 | SELECT 列引用 | `column_reference` |
 | WHERE / HAVING 谓词 | `predicate_binding` |
@@ -58,7 +58,7 @@
 | GROUP BY / ORDER BY / LIMIT / 聚合函数 | `aggregation_or_ordering` |
 | 无法识别 | `other` |
 
-### 4.4 Checkpoint ID Assignment
+### 4.4 Step ID Assignment
 - 格式：`{sample_id}::cp::{t:04d}`
 - t 从 1 开始，严格递增
 - 使用已测试的 `assign_checkpoint_ids()` 函数
@@ -80,10 +80,10 @@
 
 ---
 
-## 6. Checkpoint Boundary 判定规则
+## 6. Step Boundary 判定规则
 
-1. **Structured Trace**: 每个 step dict 是一个 checkpoint 边界
-2. **SQL Text**: 每个 SQL 子句（SELECT/FROM/WHERE/JOIN/GROUP BY/ORDER BY/HAVING/LIMIT）是一个 checkpoint 边界
+1. **Structured Trace**: 每个 step dict 是一个 step 边界
+2. **SQL Text**: 每个 SQL 子句（SELECT/FROM/WHERE/JOIN/GROUP BY/ORDER BY/HAVING/LIMIT）是一个 step 边界
 3. **Raw Output**: 
    - 优先提取 ```sql 代码块中的 SQL 子句
    - 若无代码块，解析 `Step N:` 标记作为边界
@@ -117,7 +117,7 @@ Samples attempted: 5
 Samples succeeded: 5
 Samples skipped: 0
 
-Checkpoint type distribution:
+Step type distribution:
   - schema_linking: 9
   - column_reference: 5
   - predicate_binding: 4
@@ -128,7 +128,7 @@ Source field distribution:
   - pred_sql: 21
 ```
 
-**说明**: 数据源 `model_outputs.jsonl` 包含 `pred_sql` 字段（模型预测 SQL），成功提取为 checkpoint sequence。
+**说明**: 数据源 `model_outputs.jsonl` 包含 `pred_sql` 字段（模型预测 SQL），成功提取为 step sequence。
 
 ---
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-Preview checkpoint sequences from raw data.
+Preview step sequences from raw data.
 
-Reads samples from input directory, builds checkpoint sequences,
+Reads samples from input directory, builds step sequences,
 and outputs preview JSONL + report.
 """
 
@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from slrdaf.observation.protocol import load_protocol
-from slrdaf.observation.checkpoints import build_checkpoint_sequence
+from slrdaf.observation.steps import build_step_sequence
 from slrdaf.observation import io
 
 
@@ -67,7 +67,7 @@ def load_samples_from_directory(input_path: str, limit: int = 5) -> list[dict]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Preview checkpoint sequences")
+    parser = argparse.ArgumentParser(description="Preview step sequences")
     parser.add_argument("--input", required=True, help="Input data directory")
     parser.add_argument("--output", required=True, help="Output directory for preview")
     parser.add_argument(
@@ -109,23 +109,23 @@ def main():
 
     for i, sample in enumerate(samples):
         try:
-            seq = build_checkpoint_sequence(sample, protocol)
+            seq = build_step_sequence(sample, protocol)
             report["samples_succeeded"] += 1
 
             # Collect stats
-            for cp in seq.checkpoints:
-                report["checkpoint_type_distribution"][cp.checkpoint_type] += 1
+            for cp in seq.steps:
+                report["checkpoint_type_distribution"][cp.step_type] += 1
                 report["source_field_distribution"][cp.metadata.get("source_field", "unknown")] += 1
 
             preview_records.append(
                 {
                     "sample_id": seq.sample_id,
                     "protocol_hash": seq.protocol_hash,
-                    "checkpoint_count": len(seq.checkpoints),
-                    "checkpoints": [io.dataclass_to_dict(cp) for cp in seq.checkpoints],
+                    "step_count": len(seq.steps),
+                    "steps": [io.dataclass_to_dict(cp) for cp in seq.steps],
                 }
             )
-            print(f"  [{i+1}/{len(samples)}] {seq.sample_id}: {len(seq.checkpoints)} checkpoints")
+            print(f"  [{i+1}/{len(samples)}] {seq.sample_id}: {len(seq.steps)} steps")
 
         except ValueError as e:
             report["samples_skipped"] += 1

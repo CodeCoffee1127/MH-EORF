@@ -2,7 +2,7 @@
   "completed_steps": [
     "Prompt 2: Protocol Freeze",
     "Prompt 3: Code Skeleton Creation",
-    "Prompt 4: Checkpoint Extraction Migration",
+    "Prompt 4: Step Extraction Migration",
     "Prompt 5: Verification Rule Engine Migration",
     "Prompt 6: Dependency Extraction Migration",
     "Prompt 7: Perturbation Response Migration",
@@ -12,7 +12,7 @@
     "Prompt 10: Figshare Package Preparation"
   ],
   "code_paths": [
-    "src/slrdaf/observation/checkpoints.py",
+    "src/slrdaf/observation/steps.py",
     "src/slrdaf/observation/verification.py",
     "src/slrdaf/observation/dependencies.py",
     "src/slrdaf/observation/perturbations.py",
@@ -25,12 +25,12 @@
   ],
   "artifact_paths": [
     "artifacts/observation_plane/observation_planes.jsonl",
-    "artifacts/observation_plane/checkpoints.jsonl",
+    "artifacts/observation_plane/steps.jsonl",
     "artifacts/observation_plane/verification_results.jsonl",
     "artifacts/observation_plane/dependency_sets.jsonl",
     "artifacts/observation_plane/perturbation_responses.jsonl",
     "artifacts/observation_plane_full/observation_planes.jsonl",
-    "artifacts/observation_plane_full/checkpoints.jsonl",
+    "artifacts/observation_plane_full/steps.jsonl",
     "artifacts/observation_plane_full/verification_results.jsonl",
     "artifacts/observation_plane_full/perturbation_responses.jsonl"
   ],
@@ -59,7 +59,7 @@
     "M"
   ],
   "warnings": [
-    "Dataset mode produces 3,553 checkpoints instead of 10,788 due to lightweight regex segmentation. AST-level extraction requires additional dependencies.",
+    "Dataset mode produces 3,553 steps instead of 10,788 due to lightweight regex segmentation. AST-level extraction requires additional dependencies.",
     "Protocol items (llm_version, N, M, etc.) remain unconfirmed and are preserved as null in manifest."
   ]
 }

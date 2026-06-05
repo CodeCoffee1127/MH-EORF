@@ -1,8 +1,8 @@
 """
-Checkpoint sequence construction for Section 3.2.
+Step sequence construction for Section 3.2.
 
-Defines Checkpoint and CheckpointSequence dataclasses,
-and provides checkpoint ID assignment utilities.
+Defines Step and StepSequence dataclasses,
+and provides step ID assignment utilities.
 """
 
 from __future__ import annotations
@@ -13,24 +13,24 @@ from typing import Any, Optional
 
 
 @dataclass
-class Checkpoint:
-    """A single checkpoint in a reasoning trace."""
+class Step:
+    """A single step in a reasoning trace."""
 
     sample_id: str
-    checkpoint_id: str
+    step_id: str
     t: int
-    checkpoint_type: str
+    step_type: str
     content: Any
     source_span: Optional[dict] = None
     metadata: dict = field(default_factory=dict)
 
 
 @dataclass
-class CheckpointSequence:
-    """Ordered sequence of checkpoints for a single sample."""
+class StepSequence:
+    """Ordered sequence of steps for a single sample."""
 
     sample_id: str
-    checkpoints: list[Checkpoint]
+    steps: list[Step]
     protocol_hash: str
 
 
@@ -58,47 +58,47 @@ _FORBIDDEN_META_FIELDS = {
 }
 
 
-def assign_checkpoint_ids(
-    sample_id: str, checkpoints: list[Checkpoint]
-) -> list[Checkpoint]:
+def assign_step_ids(
+    sample_id: str, steps: list[Step]
+) -> list[Step]:
     """
-    Assign checkpoint IDs to a list of checkpoints.
+    Assign step IDs to a list of steps.
 
-    checkpoint_id format: {sample_id}::cp::{t:04d}
+    step_id format: {sample_id}::cp::{t:04d}
     t must start from 1 and be strictly increasing.
 
     Args:
         sample_id: Sample identifier
-        checkpoints: List of checkpoints (will be modified in place)
+        steps: List of steps (will be modified in place)
 
     Returns:
-        List of checkpoints with assigned IDs
+        List of steps with assigned IDs
 
     Raises:
         ValueError: If t is not strictly increasing or < 1
     """
-    if not checkpoints:
-        return checkpoints
+    if not steps:
+        return steps
 
     # Validate t values
     prev_t = 0
-    for cp in checkpoints:
+    for cp in steps:
         if cp.t < 1:
             raise ValueError(
-                f"Checkpoint t must be >= 1, got {cp.t} for sample {sample_id}"
+                f"Step t must be >= 1, got {cp.t} for sample {sample_id}"
             )
         if cp.t <= prev_t:
             raise ValueError(
-                f"Checkpoint t must be strictly increasing: "
+                f"Step t must be strictly increasing: "
                 f"prev={prev_t}, current={cp.t} for sample {sample_id}"
             )
         prev_t = cp.t
 
     # Assign IDs
-    for cp in checkpoints:
-        cp.checkpoint_id = f"{sample_id}::cp::{cp.t:04d}"
+    for cp in steps:
+        cp.step_id = f"{sample_id}::cp::{cp.t:04d}"
 
-    return checkpoints
+    return steps
 
 
 def _extract_sample_id(sample: dict) -> str:
@@ -115,8 +115,8 @@ def _extract_sample_id(sample: dict) -> str:
     return f"derived_{sid}"
 
 
-def _classify_checkpoint_type(step_or_sql: dict | str, sql_clause: str | None = None) -> str:
-    """Map step/sql content to checkpoint_type."""
+def _classify_step_type(step_or_sql: dict | str, sql_clause: str | None = None) -> str:
+    """Map step/sql content to step_type."""
     if sql_clause:
         clause_lower = sql_clause.lower().strip()
         if clause_lower in ("select",):
@@ -161,9 +161,9 @@ def _extract_sql_from_text(text: str) -> str | None:
     return None
 
 
-def _segment_sql_to_checkpoints(
+def _segment_sql_to_steps(
     sql_text: str, sample_id: str, protocol, source_field: str = "generated_sql"
-) -> list[Checkpoint]:
+) -> list[Step]:
     """
     Lightweight deterministic SQL clause segmentation.
     Does NOT execute SQL, does NOT use gold SQL, does NOT judge correctness.
@@ -189,18 +189,18 @@ def _segment_sql_to_checkpoints(
         i += 2
 
     if not clauses:
-        # Fallback: treat whole SQL as one checkpoint
+        # Fallback: treat whole SQL as one step
         clauses = [("SELECT", sql_text)]
 
-    checkpoints = []
+    steps = []
     for idx, (clause_kw, clause_body) in enumerate(clauses, start=1):
-        cp_type = _classify_checkpoint_type(None, sql_clause=clause_kw)
-        checkpoints.append(
-            Checkpoint(
+        cp_type = _classify_step_type(None, sql_clause=clause_kw)
+        steps.append(
+            Step(
                 sample_id=sample_id,
-                checkpoint_id="",  # Will be assigned later
+                step_id="",  # Will be assigned later
                 t=idx,
-                checkpoint_type=cp_type,
+                step_type=cp_type,
                 content={
                     "kind": "sql_clause",
                     "text": clause_body,
@@ -214,17 +214,17 @@ def _segment_sql_to_checkpoints(
                 },
             )
         )
-    return checkpoints
+    return steps
 
 
 def _extract_steps_from_structured_trace(
     trace: Any, sample_id: str, protocol
-) -> list[Checkpoint]:
-    """Extract checkpoints from structured trace (list of step dicts)."""
+) -> list[Step]:
+    """Extract steps from structured trace (list of step dicts)."""
     if not isinstance(trace, (list, tuple)):
         return []
 
-    checkpoints = []
+    steps = []
     for idx, step in enumerate(trace, start=1):
         if not isinstance(step, dict):
             continue
@@ -241,14 +241,14 @@ def _extract_steps_from_structured_trace(
         legacy_type = safe_step.get("type", safe_step.get("step_type", "other"))
         text = safe_step.get("text", safe_step.get("partial_sql", safe_step.get("proposition", "")))
 
-        cp_type = _classify_checkpoint_type(safe_step)
+        cp_type = _classify_step_type(safe_step)
 
-        checkpoints.append(
-            Checkpoint(
+        steps.append(
+            Step(
                 sample_id=sample_id,
-                checkpoint_id="",
+                step_id="",
                 t=idx,
-                checkpoint_type=cp_type,
+                step_type=cp_type,
                 content={
                     "kind": "trace_step",
                     "text": str(text),
@@ -262,14 +262,14 @@ def _extract_steps_from_structured_trace(
                 },
             )
         )
-    return checkpoints
+    return steps
 
 
-def build_checkpoint_sequence(
+def build_step_sequence(
     sample: dict, protocol
-) -> CheckpointSequence:
+) -> StepSequence:
     """
-    Build checkpoint sequence from raw sample data.
+    Build step sequence from raw sample data.
 
     Priority:
     1. Structured trace (steps, intermediate_steps, etc.)
@@ -281,53 +281,53 @@ def build_checkpoint_sequence(
         protocol: ObservationProtocol instance
 
     Returns:
-        CheckpointSequence
+        StepSequence
 
     Raises:
         ValueError: If no generated trace/sql found and only gold SQL exists
     """
     sample_id = _extract_sample_id(sample)
-    checkpoints = []
+    steps = []
 
     # 1. Try structured trace
     for field_name in _TRACE_FIELDS:
         if field_name in sample and sample[field_name]:
             trace = sample[field_name]
-            checkpoints = _extract_steps_from_structured_trace(trace, sample_id, protocol)
-            if checkpoints:
+            steps = _extract_steps_from_structured_trace(trace, sample_id, protocol)
+            if steps:
                 break
 
     # 2. Try generated/predicted SQL
-    if not checkpoints:
+    if not steps:
         for field_name in _SQL_FIELDS:
             if field_name in sample and sample[field_name]:
                 sql_text = str(sample[field_name])
-                checkpoints = _segment_sql_to_checkpoints(sql_text, sample_id, protocol, source_field=field_name)
-                if checkpoints:
+                steps = _segment_sql_to_steps(sql_text, sample_id, protocol, source_field=field_name)
+                if steps:
                     break
 
     # 3. Try raw_output (LLM reasoning trace with SQL code block)
-    if not checkpoints and "raw_output" in sample and sample["raw_output"]:
+    if not steps and "raw_output" in sample and sample["raw_output"]:
         raw = str(sample["raw_output"])
         # Extract SQL from code block
         sql_text = _extract_sql_from_text(raw)
         if sql_text:
-            checkpoints = _segment_sql_to_checkpoints(sql_text, sample_id, protocol, source_field="raw_output")
+            steps = _segment_sql_to_steps(sql_text, sample_id, protocol, source_field="raw_output")
         else:
             # Try to parse step markers in raw text
             step_pattern = re.compile(r"Step\s+(\d+):\s*(.*?)(?=Step\s+\d+:|$)", re.IGNORECASE | re.DOTALL)
-            steps = step_pattern.findall(raw)
-            if steps:
-                for idx, (_, step_text) in enumerate(steps, start=1):
+            step_matches = step_pattern.findall(raw)
+            if step_matches:
+                for idx, (_, step_text) in enumerate(step_matches, start=1):
                     text = step_text.strip()
                     if not text:
                         continue
-                    checkpoints.append(
-                        Checkpoint(
+                    steps.append(
+                        Step(
                             sample_id=sample_id,
-                            checkpoint_id="",
+                            step_id="",
                             t=idx,
-                            checkpoint_type="other",
+                            step_type="other",
                             content={
                                 "kind": "trace_step",
                                 "text": text,
@@ -341,26 +341,26 @@ def build_checkpoint_sequence(
                     )
 
     # 4. Check for gold SQL only (forbidden)
-    if not checkpoints:
+    if not steps:
         for field_name in _GOLD_FIELDS:
             if field_name in sample and sample[field_name]:
                 raise ValueError(
                     f"Sample {sample_id} contains only gold SQL ({field_name}). "
-                    "Gold SQL cannot be used to construct checkpoints. Skipping."
+                    "Gold SQL cannot be used to construct steps. Skipping."
                 )
 
     # 5. Final check
-    if not checkpoints:
+    if not steps:
         raise ValueError(
             f"No generated trace or SQL found for sample {sample_id}. "
-            "Cannot construct checkpoint sequence."
+            "Cannot construct step sequence."
         )
 
     # Assign IDs and validate
-    assign_checkpoint_ids(sample_id, checkpoints)
+    assign_step_ids(sample_id, steps)
 
-    return CheckpointSequence(
+    return StepSequence(
         sample_id=sample_id,
-        checkpoints=checkpoints,
+        steps=steps,
         protocol_hash=protocol.protocol_hash if hasattr(protocol, "protocol_hash") else str(protocol),
     )

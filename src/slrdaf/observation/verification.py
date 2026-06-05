@@ -25,10 +25,10 @@ class VerificationRule:
 
 @dataclass
 class VerificationResult:
-    """Result of applying a verification rule to a checkpoint."""
+    """Result of applying a verification rule to a step."""
 
     sample_id: str
-    checkpoint_id: str
+    step_id: str
     t: int
     rule_id: str
     rule_type: str
@@ -55,24 +55,24 @@ class RuleLibrary:
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-def _extract_checkpoint_text(checkpoint) -> str:
-    """Extract text content from checkpoint."""
-    content = checkpoint.content
+def _extract_step_text(step) -> str:
+    """Extract text content from step."""
+    content = step.content
     if isinstance(content, dict):
         return str(content.get("text", "") or content.get("normalized", ""))
     return str(content)
 
 
-def _extract_checkpoint_clause(checkpoint) -> str | None:
-    """Extract SQL clause from checkpoint content."""
-    content = checkpoint.content
+def _extract_step_clause(step) -> str | None:
+    """Extract SQL clause from step content."""
+    content = step.content
     if isinstance(content, dict):
         return content.get("clause")
     return None
 
 
 def _make_result(
-    checkpoint,
+    step,
     rule: VerificationRule,
     passed: bool,
     unverifiable: bool,
@@ -83,9 +83,9 @@ def _make_result(
 ) -> VerificationResult:
     """Create a VerificationResult."""
     return VerificationResult(
-        sample_id=checkpoint.sample_id,
-        checkpoint_id=checkpoint.checkpoint_id,
-        t=checkpoint.t,
+        sample_id=step.sample_id,
+        step_id=step.step_id,
+        t=step.t,
         rule_id=rule.rule_id,
         rule_type=rule.rule_type,
         trigger=rule.trigger,
@@ -246,24 +246,24 @@ def _extract_referenced_tables(text: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 def _verify_syntax(
-    checkpoint, rule: VerificationRule, rule_library_version: Optional[str], protocol_hash: str
+    step, rule: VerificationRule, rule_library_version: Optional[str], protocol_hash: str
 ) -> VerificationResult:
     """Syntax constraint verification."""
-    text = _extract_checkpoint_text(checkpoint)
-    clause = _extract_checkpoint_clause(checkpoint)
+    text = _extract_step_text(step)
+    clause = _extract_step_clause(step)
 
     # Rule 1: text non-empty
     if not text or not text.strip():
         return _make_result(
-            checkpoint, rule, passed=False, unverifiable=False,
-            message="Checkpoint text is empty",
+            step, rule, passed=False, unverifiable=False,
+            message="Step text is empty",
             rule_library_version=rule_library_version, protocol_hash=protocol_hash,
         )
 
     # Rule 2: balanced parentheses
     if not _check_balanced_parens(text):
         return _make_result(
-            checkpoint, rule, passed=False, unverifiable=False,
+            step, rule, passed=False, unverifiable=False,
             message="Unbalanced parentheses",
             rule_library_version=rule_library_version, protocol_hash=protocol_hash,
         )
@@ -271,7 +271,7 @@ def _verify_syntax(
     # Rule 3: balanced quotes
     if not _check_balanced_quotes(text):
         return _make_result(
-            checkpoint, rule, passed=False, unverifiable=False,
+            step, rule, passed=False, unverifiable=False,
             message="Unbalanced single quotes",
             rule_library_version=rule_library_version, protocol_hash=protocol_hash,
         )
@@ -279,28 +279,28 @@ def _verify_syntax(
     # Rule 4-6: meaningful SQL fragment check
     if not _is_meaningful_sql_fragment(text, clause):
         return _make_result(
-            checkpoint, rule, passed=False, unverifiable=True,
+            step, rule, passed=False, unverifiable=True,
             message="Fragment content too sparse to validate",
             rule_library_version=rule_library_version, protocol_hash=protocol_hash,
         )
 
     return _make_result(
-        checkpoint, rule, passed=True, unverifiable=False,
+        step, rule, passed=True, unverifiable=False,
         message="Syntax validation passed",
         rule_library_version=rule_library_version, protocol_hash=protocol_hash,
     )
 
 
 def _verify_type(
-    checkpoint, context: dict, rule: VerificationRule,
+    step, context: dict, rule: VerificationRule,
     rule_library_version: Optional[str], protocol_hash: str,
 ) -> VerificationResult:
     """Type constraint verification."""
-    cp_type = checkpoint.checkpoint_type
+    cp_type = step.step_type
     if cp_type not in ("column_reference", "predicate_binding", "schema_linking"):
         return _make_result(
-            checkpoint, rule, passed=True, unverifiable=False,
-            message="Type check not applicable for this checkpoint type",
+            step, rule, passed=True, unverifiable=False,
+            message="Type check not applicable for this step type",
             rule_library_version=rule_library_version, protocol_hash=protocol_hash,
         )
 
@@ -311,18 +311,18 @@ def _verify_type(
     # Rule 1: schema must be available
     if not tables and not columns:
         return _make_result(
-            checkpoint, rule, passed=False, unverifiable=True,
+            step, rule, passed=False, unverifiable=True,
             message="schema context unavailable",
             rule_library_version=rule_library_version, protocol_hash=protocol_hash,
         )
 
-    text = _extract_checkpoint_text(checkpoint)
+    text = _extract_step_text(step)
 
     if cp_type in ("column_reference", "predicate_binding"):
         ref_cols = _extract_referenced_columns(text)
         if not ref_cols:
             return _make_result(
-                checkpoint, rule, passed=False, unverifiable=True,
+                step, rule, passed=False, unverifiable=True,
                 message="Cannot extract column references from text",
                 rule_library_version=rule_library_version, protocol_hash=protocol_hash,
             )
@@ -331,7 +331,7 @@ def _verify_type(
         found = [c for c in ref_cols if c in columns or c.split(".")[0] in tables]
         if not found:
             return _make_result(
-                checkpoint, rule, passed=False, unverifiable=False,
+                step, rule, passed=False, unverifiable=False,
                 message=f"Referenced columns not found in schema: {ref_cols}",
                 rule_library_version=rule_library_version, protocol_hash=protocol_hash,
             )
@@ -340,7 +340,7 @@ def _verify_type(
         ref_tables = _extract_referenced_tables(text)
         if not ref_tables:
             return _make_result(
-                checkpoint, rule, passed=False, unverifiable=True,
+                step, rule, passed=False, unverifiable=True,
                 message="Cannot extract table references from text",
                 rule_library_version=rule_library_version, protocol_hash=protocol_hash,
             )
@@ -348,36 +348,36 @@ def _verify_type(
         found = [t for t in ref_tables if t in tables]
         if not found:
             return _make_result(
-                checkpoint, rule, passed=False, unverifiable=False,
+                step, rule, passed=False, unverifiable=False,
                 message=f"Referenced tables not found in schema: {ref_tables}",
                 rule_library_version=rule_library_version, protocol_hash=protocol_hash,
             )
 
     return _make_result(
-        checkpoint, rule, passed=True, unverifiable=False,
+        step, rule, passed=True, unverifiable=False,
         message="Type validation passed",
         rule_library_version=rule_library_version, protocol_hash=protocol_hash,
     )
 
 
 def _verify_execution(
-    checkpoint, context: dict, rule: VerificationRule,
+    step, context: dict, rule: VerificationRule,
     rule_library_version: Optional[str], protocol_hash: str,
 ) -> VerificationResult:
     """Execution-side consistency verification."""
-    content = checkpoint.content
+    content = step.content
     kind = content.get("kind", "") if isinstance(content, dict) else ""
     if kind != "sql_clause":
         return _make_result(
-            checkpoint, rule, passed=True, unverifiable=False,
-            message="Execution check not applicable for non-SQL checkpoint",
+            step, rule, passed=True, unverifiable=False,
+            message="Execution check not applicable for non-SQL step",
             rule_library_version=rule_library_version, protocol_hash=protocol_hash,
         )
 
     db_path = _extract_execution_context(context)
     if not db_path:
         return _make_result(
-            checkpoint, rule, passed=False, unverifiable=True,
+            step, rule, passed=False, unverifiable=True,
             message="execution context unavailable",
             rule_library_version=rule_library_version, protocol_hash=protocol_hash,
         )
@@ -389,17 +389,17 @@ def _verify_execution(
 
         if not Path(db_path).exists():
             return _make_result(
-                checkpoint, rule, passed=False, unverifiable=True,
+                step, rule, passed=False, unverifiable=True,
                 message=f"Database file not found: {db_path}",
                 rule_library_version=rule_library_version, protocol_hash=protocol_hash,
             )
 
-        text = _extract_checkpoint_text(checkpoint)
+        text = _extract_step_text(step)
         ref_tables = _extract_referenced_tables(text)
 
         if not ref_tables:
             return _make_result(
-                checkpoint, rule, passed=False, unverifiable=True,
+                step, rule, passed=False, unverifiable=True,
                 message="No table references to verify",
                 rule_library_version=rule_library_version, protocol_hash=protocol_hash,
             )
@@ -423,20 +423,20 @@ def _verify_execution(
 
         if all_valid:
             return _make_result(
-                checkpoint, rule, passed=True, unverifiable=False,
+                step, rule, passed=True, unverifiable=False,
                 message="Table existence check passed",
                 rule_library_version=rule_library_version, protocol_hash=protocol_hash,
             )
         else:
             return _make_result(
-                checkpoint, rule, passed=False, unverifiable=False,
+                step, rule, passed=False, unverifiable=False,
                 message="Referenced table not found in database",
                 rule_library_version=rule_library_version, protocol_hash=protocol_hash,
             )
 
     except Exception as e:
         return _make_result(
-            checkpoint, rule, passed=False, unverifiable=True,
+            step, rule, passed=False, unverifiable=True,
             message=f"Execution check error: {str(e)}",
             rule_library_version=rule_library_version, protocol_hash=protocol_hash,
         )
@@ -493,14 +493,14 @@ def load_rule_library(protocol) -> RuleLibrary:
     )
 
 
-def verify_checkpoint(
-    checkpoint, context: dict, rules: RuleLibrary
+def verify_step(
+    step, context: dict, rules: RuleLibrary
 ) -> list[VerificationResult]:
     """
-    Verify a single checkpoint against all rules.
+    Verify a single step against all rules.
 
     Args:
-        checkpoint: Checkpoint instance
+        step: Step instance
         context: Verification context (schema, database info, etc.)
         rules: RuleLibrary instance
 
@@ -512,11 +512,11 @@ def verify_checkpoint(
     for rule in rules.rules:
         try:
             if rule.rule_type == "syntax":
-                result = _verify_syntax(checkpoint, rule, rules.rule_library_version, rules.protocol_hash)
+                result = _verify_syntax(step, rule, rules.rule_library_version, rules.protocol_hash)
             elif rule.rule_type == "type":
-                result = _verify_type(checkpoint, context, rule, rules.rule_library_version, rules.protocol_hash)
+                result = _verify_type(step, context, rule, rules.rule_library_version, rules.protocol_hash)
             elif rule.rule_type == "execution_side_consistency":
-                result = _verify_execution(checkpoint, context, rule, rules.rule_library_version, rules.protocol_hash)
+                result = _verify_execution(step, context, rule, rules.rule_library_version, rules.protocol_hash)
             else:
                 # Unknown rule type, skip
                 continue
@@ -525,9 +525,9 @@ def verify_checkpoint(
             # Safety: never let one rule failure break the whole sequence
             results.append(
                 VerificationResult(
-                    sample_id=checkpoint.sample_id,
-                    checkpoint_id=checkpoint.checkpoint_id,
-                    t=checkpoint.t,
+                    sample_id=step.sample_id,
+                    step_id=step.step_id,
+                    t=step.t,
                     rule_id=rule.rule_id,
                     rule_type=rule.rule_type,
                     trigger=rule.trigger,
@@ -542,14 +542,14 @@ def verify_checkpoint(
     return results
 
 
-def verify_checkpoint_sequence(
+def verify_step_sequence(
     sequence, context: dict, protocol
 ) -> list[VerificationResult]:
     """
-    Verify all checkpoints in a sequence.
+    Verify all steps in a sequence.
 
     Args:
-        sequence: CheckpointSequence instance
+        sequence: StepSequence instance
         context: Verification context
         protocol: ObservationProtocol instance
 
@@ -559,8 +559,8 @@ def verify_checkpoint_sequence(
     rules = load_rule_library(protocol)
     all_results = []
 
-    for checkpoint in sequence.checkpoints:
-        results = verify_checkpoint(checkpoint, context, rules)
+    for step in sequence.steps:
+        results = verify_step(step, context, rules)
         all_results.extend(results)
 
     return all_results

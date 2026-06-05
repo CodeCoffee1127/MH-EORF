@@ -1,8 +1,8 @@
 # Observation Plane Construction Module
-# Covers: checkpoint extraction, verification, dependency extraction, perturbation response, observation plane assembly
+# Covers: step extraction, verification, dependency extraction, perturbation response, observation plane assembly
 
 from .protocol import ObservationProtocol, load_protocol
-from .checkpoints import Checkpoint, CheckpointSequence, assign_checkpoint_ids
+from .checkpoints import Step, StepSequence, assign_step_ids
 from .verification import VerificationRule, VerificationResult, RuleLibrary
 from .dependencies import DependencyEdge, DependencySet
 from .perturbations import PerturbationFamily, PerturbationResponse
@@ -13,9 +13,9 @@ from . import io
 __all__ = [
     "ObservationProtocol",
     "load_protocol",
-    "Checkpoint",
-    "CheckpointSequence",
-    "assign_checkpoint_ids",
+    "Step",
+    "StepSequence",
+    "assign_step_ids",
     "VerificationRule",
     "VerificationResult",
     "RuleLibrary",

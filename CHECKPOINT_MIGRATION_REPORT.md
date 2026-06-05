@@ -1,7 +1,7 @@
-# CHECKPOINT_MIGRATION_REPORT.md
+# STEP_MIGRATION_REPORT.md
 
-> **生成时间**: 2026-06-03  
-> **步骤**: 第 4 步 — 增量迁移 checkpoint sequence construction  
+> **生成时间**: 2026-06-03
+> **步骤**: 第 4 步 — 增量迁移 step sequence construction
 > **状态**: ✅ 完成
 
 ---
@@ -10,11 +10,11 @@
 
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| `src/slrdaf/observation/checkpoints.py` | 增量更新 | 实现 `build_checkpoint_sequence()` 及相关 helper |
-| `experiments/preview_checkpoint_sequences.py` | 新建 | Preview 脚本 |
-| `tests/test_checkpoint_extraction.py` | 新建 | 6 个测试用例 |
-| `docs/migration_checkpoint_extractor.md` | 新建 | 迁移文档 |
-| `CHECKPOINT_MIGRATION_REPORT.md` | 新建 | 本文件 |
+| `src/mhiedew/observation/steps.py` | 增量更新 | 实现 `build_step_sequence()` 及相关 helper |
+| `experiments/preview_step_sequences.py` | 新建 | Preview 脚本 |
+| `tests/test_step_extraction.py` | 新建 | 6 个测试用例 |
+| `docs/migration_step_extractor.md` | 新建 | 迁移文档 |
+| `STEP_MIGRATION_REPORT.md` | 新建 | 本文件 |
 
 ---
 
@@ -35,19 +35,19 @@
 
 | 函数 | 类型 | 说明 |
 |------|------|------|
-| `build_checkpoint_sequence()` | 公开 | 主入口，从 sample dict 构建 CheckpointSequence |
-| `assign_checkpoint_ids()` | 公开 | 分配 checkpoint ID（保留第 3 步实现） |
+| `build_step_sequence()` | 公开 | 主入口，从 sample dict 构建 StepSequence |
+| `assign_step_ids()` | 公开 | 分配 step ID（保留第 3 步实现） |
 | `_extract_sample_id()` | 内部 | 提取 sample_id，支持多字段优先级 fallback |
-| `_classify_checkpoint_type()` | 内部 | 映射 step/sql 内容到 checkpoint_type |
+| `_classify_step_type()` | 内部 | 映射 step/sql 内容到 step_type |
 | `_extract_sql_from_text()` | 内部 | 从 markdown 代码块或文本中提取 SQL |
-| `_segment_sql_to_checkpoints()` | 内部 | 正则表达式 SQL 子句分段 |
-| `_extract_steps_from_structured_trace()` | 内部 | 从结构化 trace 提取 checkpoints |
+| `_segment_sql_to_steps()` | 内部 | 正则表达式 SQL 子句分段 |
+| `_extract_steps_from_structured_trace()` | 内部 | 从结构化 trace 提取 steps |
 
 ---
 
-## 4. Checkpoint_type 映射表
+## 4. Step_type 映射表
 
-| 输入特征 | checkpoint_type | 示例 |
+| 输入特征 | step_type | 示例 |
 |---------|----------------|------|
 | SELECT 列引用 | `column_reference` | `SELECT u.name, u.age` |
 | WHERE / HAVING 谓词 | `predicate_binding` | `WHERE u.age > 18` |
@@ -99,7 +99,7 @@ Samples attempted: 5
 Samples succeeded: 5
 Samples skipped: 0
 
-Checkpoint type distribution:
+Step type distribution:
   schema_linking: 9
   column_reference: 5
   predicate_binding: 4
@@ -111,8 +111,8 @@ Source field distribution:
 ```
 
 **输出文件**:
-- `artifacts/observation_debug/checkpoint_sequence_preview.jsonl`
-- `artifacts/observation_debug/checkpoint_sequence_preview_report.json`
+- `artifacts/observation_debug/step_sequence_preview.jsonl`
+- `artifacts/observation_debug/step_sequence_preview_report.json`
 
 ---
 
@@ -126,7 +126,7 @@ $ pytest tests -q
 
 **测试覆盖**:
 - ✅ 第 3 步原有 16 个测试全部通过
-- ✅ 新增 6 个 checkpoint extraction 测试全部通过：
+- ✅ 新增 6 个 step extraction 测试全部通过：
   - `test_structured_trace` — 结构化 trace 提取
   - `test_generated_sql` — Generated SQL 提取
   - `test_gold_sql_forbidden` — Gold SQL 禁用
@@ -139,7 +139,7 @@ $ pytest tests -q
 ## 9. py_compile 结果
 
 ```
-$ python -m py_compile checkpoints.py preview_checkpoint_sequences.py
+$ python -m py_compile steps.py preview_step_sequences.py
 ```
 
 **所有文件编译通过，无语法错误。**
@@ -149,7 +149,7 @@ $ python -m py_compile checkpoints.py preview_checkpoint_sequences.py
 ## 10. 边界检查结果
 
 ### 10.1 禁止符号扫描
-在 `checkpoints.py` 中搜索下游字段：
+在 `steps.py` 中搜索下游字段：
 ```
 A_i_t, H_i_t, I_plus, I_minus, rho, x_dir, x_res, s_i_t, Q_i_t_h, 
 tau_i, final_label, endpoint_accuracy, execution_accuracy, 
@@ -158,9 +158,9 @@ train, fit, predict, calibration, threshold, plot, matplotlib, seaborn
 
 **结果**: 仅出现在 `_FORBIDDEN_META_FIELDS` 黑名单中（第 55-57 行），功能代码中无引用。✅ 通过
 
-### 10.2 Checkpoint 边界
+### 10.2 Step 边界
 - ✅ t 从 1 开始，严格递增
-- ✅ checkpoint_id 格式正确：`{sample_id}::cp::{t:04d}`
+- ✅ step_id 格式正确：`{sample_id}::cp::{t:04d}`
 - ✅ 不使用 gold SQL
 - ✅ 不执行 SQL
 - ✅ 不读取 final execution result
@@ -172,9 +172,9 @@ train, fit, predict, calibration, threshold, plot, matplotlib, seaborn
 
 | 文件 | 路径 | 用途 |
 |------|------|------|
-| Preview JSONL | `artifacts/observation_debug/checkpoint_sequence_preview.jsonl` | 验证 verification 规则引擎输入格式 |
-| Preview Report | `artifacts/observation_debug/checkpoint_sequence_preview_report.json` | 了解 checkpoint 类型分布和来源 |
-| Checkpoints.py | `src/slrdaf/observation/checkpoints.py` | 提供 Checkpoint dataclass 定义 |
+| Preview JSONL | `artifacts/observation_debug/step_sequence_preview.jsonl` | 验证 verification 规则引擎输入格式 |
+| Preview Report | `artifacts/observation_debug/step_sequence_preview_report.json` | 了解 step 类型分布和来源 |
+| Steps.py | `src/mhiedew/observation/steps.py` | 提供 Step dataclass 定义 |
 | Protocol | `FROZEN_PROTOCOL_MANIFEST.json` | 提供 protocol_hash 和配置 |
 
 ---
@@ -183,14 +183,14 @@ train, fit, predict, calibration, threshold, plot, matplotlib, seaborn
 
 | # | 验收标准 | 状态 |
 |---|---------|------|
-| 1 | `build_checkpoint_sequence` 不再 raise NotImplementedError | ✅ 通过 |
-| 2 | `assign_checkpoint_ids` 原有行为不被破坏 | ✅ 通过 |
+| 1 | `build_step_sequence` 不再 raise NotImplementedError | ✅ 通过 |
+| 2 | `assign_step_ids` 原有行为不被破坏 | ✅ 通过 |
 | 3 | 第 3 步已有 16 个测试继续通过 | ✅ 通过 (22/22) |
-| 4 | 新增 checkpoint extraction 测试通过 | ✅ 通过 (6/6) |
+| 4 | 新增 step extraction 测试通过 | ✅ 通过 (6/6) |
 | 5 | py_compile 通过 | ✅ 通过 |
 | 6 | 不修改旧项目文件 | ✅ 通过 |
 | 7 | 不调用 LLM | ✅ 通过 |
-| 8 | 不使用 gold SQL 构造 checkpoint | ✅ 通过 |
+| 8 | 不使用 gold SQL 构造 step | ✅ 通过 |
 | 9 | 不引入 §3.3/§3.4 下游字段 | ✅ 通过 |
 | 10 | 能生成 preview JSONL 和 report | ✅ 通过 |
 | 11 | 生成 migration 文档和执行报告 | ✅ 通过 |

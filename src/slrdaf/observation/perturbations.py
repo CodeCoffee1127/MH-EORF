@@ -28,10 +28,10 @@ class PerturbationFamily:
 
 @dataclass
 class PerturbationResponse:
-    """Response to a perturbation applied to a predecessor checkpoint."""
+    """Response to a perturbation applied to a predecessor step."""
 
     sample_id: str
-    checkpoint_id: str
+    step_id: str
     t: int
     perturbed_predecessor_id: str
     perturbation_family: str
@@ -57,12 +57,12 @@ _SQL_KEYWORDS = {
 }
 
 
-def _extract_checkpoint_text(checkpoint) -> str:
-    """Extract text content from checkpoint."""
-    content = checkpoint.content
+def _extract_step_text(step) -> str:
+    """Extract text content from step."""
+    content = step.content
     if isinstance(content, dict):
         return str(content.get("text", "") or content.get("normalized", ""))
-    return str(checkpoint.content)
+    return str(step.content)
 
 
 def _deterministic_choice(items: list, seed_material: str) -> Any:
@@ -122,17 +122,17 @@ def _normalize_verification_summary(results: list) -> list[dict]:
     return summary
 
 
-def _build_checkpoint_lookup(sequence) -> dict[str, Any]:
-    """Build lookup dict: checkpoint_id -> Checkpoint."""
-    return {cp.checkpoint_id: cp for cp in sequence.checkpoints}
+def _build_step_lookup(sequence) -> dict[str, Any]:
+    """Build lookup dict: step_id -> Step."""
+    return {cp.step_id: cp for cp in sequence.steps}
 
 
-def _get_dependency_set_for_checkpoint(
-    dependency_sets: list, checkpoint_id: str
+def _get_dependency_set_for_step(
+    dependency_sets: list, step_id: str
 ) -> Any | None:
-    """Find DependencySet for a given checkpoint_id."""
+    """Find DependencySet for a given step_id."""
     for ds in dependency_sets:
-        if ds.checkpoint_id == checkpoint_id:
+        if ds.step_id == step_id:
             return ds
     return None
 
@@ -238,7 +238,7 @@ def load_perturbation_families(protocol) -> list[PerturbationFamily]:
         PerturbationFamily(
             family_id="structural.identifier_mask",
             family_type="structural",
-            description="Mask one identifier token in predecessor checkpoint text.",
+            description="Mask one identifier token in predecessor step text.",
             version="implementation_draft_for_section_3_2",
             metadata={"effect": "local structural token masking", "deterministic": True},
         ),
@@ -259,28 +259,28 @@ def load_perturbation_families(protocol) -> list[PerturbationFamily]:
         PerturbationFamily(
             family_id="structural.clause_marker_noise",
             family_type="structural",
-            description="Apply a safe local clause-marker perturbation without reordering future checkpoints.",
+            description="Apply a safe local clause-marker perturbation without reordering future steps.",
             version="implementation_draft_for_section_3_2",
             metadata={"effect": "local surface structural perturbation", "deterministic": True},
         ),
     ]
 
 
-def perturb_checkpoint(
+def perturb_step(
     predecessor, family: PerturbationFamily, protocol
 ) -> dict:
     """
-    Apply perturbation to a predecessor checkpoint.
+    Apply perturbation to a predecessor step.
 
     Args:
-        predecessor: Checkpoint instance to perturb
+        predecessor: Step instance to perturb
         family: PerturbationFamily instance
         protocol: ObservationProtocol instance
 
     Returns:
         Dict with perturbed content and metadata
     """
-    text = _extract_checkpoint_text(predecessor)
+    text = _extract_step_text(predecessor)
     original_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
 
     # Apply perturbation based on family_id
@@ -302,10 +302,10 @@ def perturb_checkpoint(
     return {
         "family_id": family.family_id,
         "family_type": family.family_type,
-        "predecessor_id": predecessor.checkpoint_id,
+        "predecessor_id": predecessor.step_id,
         "original_text_hash": original_hash,
         "perturbed_text_hash": perturbed_hash,
-        "perturbed_checkpoint_content": {
+        "perturbed_step_content": {
             "kind": "perturbed",
             "text": new_text,
             "clause": predecessor.content.get("clause") if isinstance(predecessor.content, dict) else None,
@@ -318,10 +318,10 @@ def generate_perturbation_responses(
     sequence, dependency_sets: list, context: dict, rules, protocol
 ) -> list[PerturbationResponse]:
     """
-    Generate perturbation responses for all checkpoints.
+    Generate perturbation responses for all steps.
 
     Args:
-        sequence: CheckpointSequence instance
+        sequence: StepSequence instance
         dependency_sets: List of DependencySet instances
         context: Perturbation context
         rules: RuleLibrary instance
@@ -331,19 +331,19 @@ def generate_perturbation_responses(
         List of PerturbationResponse instances
     """
     families = load_perturbation_families(protocol)
-    cp_lookup = _build_checkpoint_lookup(sequence)
+    cp_lookup = _build_step_lookup(sequence)
     vr_by_cp = {}
     for vr in context.get("verification_results", []):
         if isinstance(vr, dict):
-            cid = vr.get("checkpoint_id", "")
+            cid = vr.get("step_id", "")
         else:
-            cid = getattr(vr, "checkpoint_id", "")
+            cid = getattr(vr, "step_id", "")
         vr_by_cp.setdefault(cid, []).append(vr)
 
     all_responses = []
 
     for ds in dependency_sets:
-        target_cp = cp_lookup.get(ds.checkpoint_id)
+        target_cp = cp_lookup.get(ds.step_id)
         if not target_cp:
             continue
 
@@ -357,11 +357,11 @@ def generate_perturbation_responses(
 
             for family in families:
                 # Generate perturbation
-                payload = perturb_checkpoint(pred_cp, family, protocol)
+                payload = perturb_step(pred_cp, family, protocol)
                 payload_hash = hash_perturbation_payload(payload)
 
                 # Before verification summary
-                before_vr = vr_by_cp.get(target_cp.checkpoint_id, [])
+                before_vr = vr_by_cp.get(target_cp.step_id, [])
                 before_summary = _normalize_verification_summary(before_vr) if before_vr else []
 
                 # After verification: re-verify target with perturbed context
@@ -369,8 +369,8 @@ def generate_perturbation_responses(
                 # so after_verification may be same as before. This is allowed.
                 perturbed_context = dict(context)
                 perturbed_context["perturbed_predecessor_summary"] = payload.get("safe_summary", {})
-                from slrdaf.observation.verification import verify_checkpoint
-                after_vr = verify_checkpoint(target_cp, perturbed_context, rules)
+                from slrdaf.observation.verification import verify_step
+                after_vr = verify_step(target_cp, perturbed_context, rules)
                 after_summary = _normalize_verification_summary(after_vr)
 
                 # Determine verification_changed
@@ -395,9 +395,9 @@ def generate_perturbation_responses(
 
                 # Build response_summary
                 response_summary = {
-                    "target_checkpoint_id": target_cp.checkpoint_id,
+                    "target_step_id": target_cp.step_id,
                     "target_t": target_cp.t,
-                    "perturbed_predecessor_id": pred_cp.checkpoint_id,
+                    "perturbed_predecessor_id": pred_cp.step_id,
                     "predecessor_t": pred_cp.t,
                     "dependency_allowed": True,
                     "perturbation_changed_predecessor": payload.get("safe_summary", {}).get("changed", False),
@@ -410,9 +410,9 @@ def generate_perturbation_responses(
 
                 resp = PerturbationResponse(
                     sample_id=sequence.sample_id,
-                    checkpoint_id=target_cp.checkpoint_id,
+                    step_id=target_cp.step_id,
                     t=target_cp.t,
-                    perturbed_predecessor_id=pred_cp.checkpoint_id,
+                    perturbed_predecessor_id=pred_cp.step_id,
                     perturbation_family=family.family_id,
                     perturbation_id=perturbation_id,
                     perturbation_payload_hash=payload_hash,

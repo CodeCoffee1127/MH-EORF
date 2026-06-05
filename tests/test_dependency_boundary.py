@@ -8,40 +8,40 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from slrdaf.observation.checkpoints import Checkpoint, CheckpointSequence
+from slrdaf.observation.checkpoints import Step, StepSequence
 from slrdaf.observation.dependencies import DependencySet, DependencyEdge, validate_historical_dependencies
 
 
 def test_valid_dependencies():
     """Test valid historical dependencies."""
-    # Create 3 checkpoints
-    checkpoints = [
-        Checkpoint(
+    # Create 3 steps
+    steps = [
+        Step(
             sample_id="sample001",
-            checkpoint_id="sample001::cp::0001",
+            step_id="sample001::cp::0001",
             t=1,
-            checkpoint_type="column_reference",
+            step_type="column_reference",
             content={},
         ),
-        Checkpoint(
+        Step(
             sample_id="sample001",
-            checkpoint_id="sample001::cp::0002",
+            step_id="sample001::cp::0002",
             t=2,
-            checkpoint_type="predicate_binding",
+            step_type="predicate_binding",
             content={},
         ),
-        Checkpoint(
+        Step(
             sample_id="sample001",
-            checkpoint_id="sample001::cp::0003",
+            step_id="sample001::cp::0003",
             t=3,
-            checkpoint_type="aggregation_or_ordering",
+            step_type="aggregation_or_ordering",
             content={},
         ),
     ]
 
-    sequence = CheckpointSequence(
+    sequence = StepSequence(
         sample_id="sample001",
-        checkpoints=checkpoints,
+        checkpoints=steps,
         protocol_hash="a" * 64,
     )
 
@@ -100,42 +100,42 @@ def test_valid_dependencies():
 
 def test_invalid_dependencies():
     """Test that future dependencies raise errors."""
-    checkpoints = [
-        Checkpoint(
+    steps = [
+        Step(
             sample_id="sample001",
-            checkpoint_id="sample001::cp::0001",
+            step_id="sample001::cp::0001",
             t=1,
-            checkpoint_type="other",
+            step_type="other",
             content={},
         ),
-        Checkpoint(
+        Step(
             sample_id="sample001",
-            checkpoint_id="sample001::cp::0002",
+            step_id="sample001::cp::0002",
             t=2,
-            checkpoint_type="other",
+            step_type="other",
             content={},
         ),
-        Checkpoint(
+        Step(
             sample_id="sample001",
-            checkpoint_id="sample001::cp::0003",
+            step_id="sample001::cp::0003",
             t=3,
-            checkpoint_type="other",
+            step_type="other",
             content={},
         ),
     ]
 
-    sequence = CheckpointSequence(
+    sequence = StepSequence(
         sample_id="sample001",
-        checkpoints=checkpoints,
+        checkpoints=steps,
         protocol_hash="a" * 64,
     )
 
-    # Invalid: cp3 depends on cp2 (future dependency)
+    # Invalid: step3 depends on step2 (future dependency)
     invalid_dep_set = DependencySet(
         sample_id="sample001",
         checkpoint_id="sample001::cp::0002",
         t=2,
-        E_minus=["sample001::cp::0003"],  # cp3 has t=3 >= current t=2
+        E_minus=["sample001::cp::0003"],  # step3 has t=3 >= current t=2
         dependency_edges=[],
         extraction_method="test",
         protocol_hash="a" * 64,

@@ -1,11 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PerturbationResponse",
-  "description": "Response to a perturbation applied to a predecessor checkpoint (Section 3.2)",
+  "description": "Response to a perturbation applied to a predecessor step (Section 3.2)",
   "type": "object",
   "required": [
     "sample_id",
-    "checkpoint_id",
+    "step_id",
     "t",
     "perturbed_predecessor_id",
     "perturbation_family",
@@ -23,16 +23,16 @@
     },
     "checkpoint_id": {
       "type": "string",
-      "description": "Target checkpoint identifier"
+      "description": "Target step identifier"
     },
     "t": {
       "type": "integer",
       "minimum": 1,
-      "description": "Checkpoint sequence number"
+      "description": "Step sequence number"
     },
     "perturbed_predecessor_id": {
       "type": "string",
-      "description": "Predecessor checkpoint ID that was perturbed"
+      "description": "Predecessor step ID that was perturbed"
     },
     "perturbation_family": {
       "type": "string",
@@ -51,23 +51,47 @@
     "before_verification": {
       "description": "Verification result before perturbation",
       "anyOf": [
-        { "type": "object" },
-        { "type": "string" },
-        { "type": "array" },
-        { "type": "number" },
-        { "type": "boolean" },
-        { "type": "null" }
+        {
+          "type": "object"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "after_verification": {
       "description": "Verification result after perturbation",
       "anyOf": [
-        { "type": "object" },
-        { "type": "string" },
-        { "type": "array" },
-        { "type": "number" },
-        { "type": "boolean" },
-        { "type": "null" }
+        {
+          "type": "object"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "response_summary": {

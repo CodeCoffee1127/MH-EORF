@@ -9,7 +9,7 @@
 ## 1. py_compile 结果
 
 ```
-$ python -m py_compile src/slrdaf/observation/*.py
+$ python -m py_compile src/mhiedew/observation/*.py
 ```
 
 **结果**: ✅ 所有 8 个模块编译通过，无语法错误。
@@ -60,11 +60,11 @@ Leakage all false: True
 |------|-----|
 | `source_mode` | `dataset` |
 | `samples` | 903/903 |
-| `checkpoints` | 3,553 |
+| `steps` | 3,553 |
 | `verification_results` | 10,659 |
 | `dependency_sets` | 3,553 |
 | `perturbation_responses` | 7,140 |
-| `判定` | **Partial Build** (样本数匹配，checkpoint 行数因提取粒度不同而较少) |
+| `判定` | **Partial Build** (样本数匹配，step 行数因提取粒度不同而较少) |
 | `验证` | ✅ 通过 |
 
 详细报告见 `FULL_BUILD_ATTEMPT_REPORT.md`。
@@ -82,14 +82,14 @@ Leakage all false: True
 ### 6.1 README.md 建议结构
 
 ```markdown
-# SL-RDAF: Checkpoint-Level Multi-Horizon Reliability Diagnosis
+# SL-RDAF: Step-Level Multi-Horizon Degradation Analysis
 
 ## Overview
 This repository contains the code and data for the SL-RDAF method described in:
-"Checkpoint-Level Multi-Horizon Reliability Diagnosis for LLM-Based Agent Systems in Industrial IoT"
+"Step-Level Multi-Horizon Degradation Analysis for LLM-Based Agent Systems in Industrial IoT"
 
 ## Repository Structure
-- `src/slrdaf/observation/` — §3.2 Observation Plane Construction (Core)
+- `src/mhiedew/observation/` — §3.2 Observation Plane Construction (Core)
 - `experiments/` — CLI scripts for building and validating observation planes
 - `tests/` — Unit tests (64 tests, all passing)
 - `schemas/` — JSON Schema definitions for observation plane components
@@ -110,13 +110,13 @@ This repository contains the code and data for the SL-RDAF method described in:
 
 ## Observation Plane Construction
 - **Protocol**: See `FROZEN_PROTOCOL_MANIFEST.json` and `configs/observation_protocol.yaml`
-- **Full Build**: `python experiments/build_observation_plane.py --source-mode dataset` (903 samples, 3,553 checkpoints)
-- **Note**: The full build uses lightweight regex-based SQL segmentation. The original dataset contains 10,788 checkpoints extracted via AST-level parsing. The §3.2 observation planes in this repository are constructed deterministically without LLM calls.
+- **Full Build**: `python experiments/build_observation_plane.py --source-mode dataset` (903 samples, 3,553 steps)
+- **Note**: The full build uses lightweight regex-based SQL segmentation. The original dataset contains 10,788 steps extracted via AST-level parsing. The §3.2 observation planes in this repository are constructed deterministically without LLM calls.
 
 ## Migration Reports
 - `MIGRATION_AUDIT.md` — Initial audit
 - `FROZEN_PROTOCOL_MANIFEST.json` — Frozen protocol
-- `CHECKPOINT_MIGRATION_REPORT.md` — Checkpoint extraction
+- `STEP_MIGRATION_REPORT.md` — Step extraction
 - `VERIFICATION_MIGRATION_REPORT.md` — Verification rules
 - `DEPENDENCY_MIGRATION_REPORT.md` — Dependency extraction
 - `PERTURBATION_MIGRATION_REPORT.md` — Perturbation responses
@@ -140,7 +140,7 @@ SL-RDAF-data-v1/
 ├── README.md
 ├── LICENSE
 ├── code/
-│   ├── src/slrdaf/observation/          # §3.2 核心代码
+│   ├── src/mhiedew/observation/          # §3.2 核心代码
 │   ├── experiments/                     # CLI 脚本
 │   ├── tests/                           # 测试
 │   ├── schemas/                         # JSON Schema
@@ -155,9 +155,9 @@ SL-RDAF-data-v1/
 │   │   ├── perturbation_responses.jsonl
 │   │   ├── observation_plane_build_report.json
 │   │   └── observation_plane_validation_report.json
-│   └── observation_plane_full/          # Full build 输出 (903 samples, 3,553 checkpoints)
+│   └── observation_plane_full/          # Full build 输出 (903 samples, 3,553 steps)
 │       ├── observation_planes.jsonl
-│       ├── checkpoints.jsonl
+│       ├── steps.jsonl
 │       ├── verification_results.jsonl
 │       ├── dependency_sets.jsonl
 │       ├── perturbation_responses.jsonl
@@ -174,7 +174,7 @@ SL-RDAF-data-v1/
 
 **注意**:
 - 将 `observation_plane_full/` 标记为 `"section-3.2-observation-planes-deterministic"` 或 `"observation-plane-construction-full-build"`，而非 `"full-observation-planes"`。
-- 明确说明 checkpoint 行数 (3,553) 与原始数据集 (10,788) 的差异源于提取粒度不同。
+- 明确说明 step 行数 (3,553) 与原始数据集 (10,788) 的差异源于提取粒度不同。
 - 包含所有迁移报告和冻结协议，确保可追溯性。
 
 ---

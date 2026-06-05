@@ -1,7 +1,7 @@
 # Migration: Perturbation Responses
 
-> **创建时间**: 2026-06-03  
-> **步骤**: 第 7 步 — 增量迁移 perturbation response generation  
+> **创建时间**: 2026-06-03
+> **步骤**: 第 7 步 — 增量迁移 perturbation response generation
 > **状态**: ✅ 完成
 
 ---
@@ -10,8 +10,8 @@
 
 实现 `D:\SL-RDAF\src\slrdaf\observation\perturbations.py` 中的：
 - `load_perturbation_families()` — 加载 4 个确定性扰动族
-- `perturb_checkpoint()` — 对前驱 checkpoint 应用扰动
-- `generate_perturbation_responses()` — 生成所有 checkpoint 的扰动响应 R_{i,t}
+- `perturb_checkpoint()` — 对前驱 step 应用扰动
+- `generate_perturbation_responses()` — 生成所有 step 的扰动响应 R_{i,t}
 
 本步骤只生成 PerturbationFamily、PerturbationResponse、R_{i,t}，不生成 §3.3 扰动特征或依赖风险特征。
 
@@ -47,7 +47,7 @@
 
 | family_id | family_type | description | deterministic |
 |-----------|-------------|-------------|---------------|
-| `structural.identifier_mask` | structural | Mask one identifier token in predecessor checkpoint text | ✅ true |
+| `structural.identifier_mask` | structural | Mask one identifier token in predecessor step text | ✅ true |
 | `structural.operator_flip` | structural | Flip a local comparison/operator token when present | ✅ true |
 | `numerical.value_shift` | numerical | Shift one numeric literal by a deterministic small offset | ✅ true |
 | `structural.clause_marker_noise` | structural | Apply a safe local clause-marker perturbation | ✅ true |
@@ -59,10 +59,10 @@
 ## 5. Deterministic Perturbation 策略
 
 - 不使用随机全局状态
-- 如需选择 token，使用 `deterministic_choice(seed_material = protocol_hash + checkpoint_id + family_id)`
+- 如需选择 token，使用 `deterministic_choice(seed_material = protocol_hash + step_id + family_id)`
 - 不调用 `random.random()`，除非先用 `protocol.random_seed + stable hash` 创建局部 `random.Random`
 - 不引入非确定性
-- 不改变原始 checkpoint 对象，只返回 perturbation payload
+- 不改变原始 step 对象，只返回 perturbation payload
 - payload 中不保存敏感原文，完整扰动内容只可临时用于验证，最终 PerturbationResponse 中只保存 hash 和 summary
 
 ---
@@ -70,25 +70,25 @@
 ## 6. E_minus 约束
 
 - **只能扰动历史 predecessor** (predecessor_t < target_t)
-- **不扰动当前 checkpoint**
-- **不扰动 future checkpoint**
-- **不扰动不在 E_minus 中的 checkpoint**
-- 如果 E_minus=[]，则该 checkpoint 没有 perturbation response
+- **不扰动当前 step**
+- **不扰动 future step**
+- **不扰动不在 E_minus 中的 step**
+- 如果 E_minus=[]，则该 step 没有 perturbation response
 
 ---
 
 ## 7. Before/After Verification Summary 语义
 
 ### Before Verification
-- 使用 context 中 verification_results 中 target checkpoint 的原始验证结果摘要
+- 使用 context 中 verification_results 中 target step 的原始验证结果摘要
 - 如果 context 中无 verification_results，则现场调用 verify_checkpoint
 - 摘要只包含：rule_id, rule_type, passed, unverifiable, message
 - **不计算** pass rate、A_i_t、H_i_t
 
 ### After Verification
-- 构造"扰动后的局部上下文"：不改变 target checkpoint 本身
+- 构造"扰动后的局部上下文"：不改变 target step 本身
 - 只在 context 中记录 perturbed_predecessor_summary
-- 对 target checkpoint 重新调用 verify_checkpoint
+- 对 target step 重新调用 verify_checkpoint
 - 如果当前 verification 规则无法感知 predecessor perturbation，after_verification 可能与 before 相同，这是允许的
 - response_summary 中记录 changed=false 或 verification_changed=false
 
@@ -121,7 +121,7 @@
 | Dependency weight | 属于 §3.3，禁止迁移 |
 | I_plus / I_minus | 属于 §3.3，禁止迁移 |
 | rho / risk memory | 属于 §3.3，禁止迁移 |
-| Diagnostic features | 属于 §3.3，禁止迁移 |
+| Analysis features | 属于 §3.3，禁止迁移 |
 | Training/calibration/visualization | 属于 §3.4/§4.x，禁止迁移 |
 | LLM 调用 | 本步骤不调用 LLM，使用确定性扰动 |
 

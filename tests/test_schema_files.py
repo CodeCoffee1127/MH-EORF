@@ -12,7 +12,7 @@ def test_schema_files_exist_and_valid():
     schema_dir = Path(__file__).resolve().parents[1] / "schemas"
 
     schema_files = [
-        "checkpoint.schema.json",
+        "step.schema.json",
         "verification_result.schema.json",
         "dependency_set.schema.json",
         "perturbation_response.schema.json",

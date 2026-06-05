@@ -1,7 +1,7 @@
 # Migration: Verification Rules
 
-> **创建时间**: 2026-06-03  
-> **步骤**: 第 5 步 — 增量迁移 verification rule engine  
+> **创建时间**: 2026-06-03
+> **步骤**: 第 5 步 — 增量迁移 verification rule engine
 > **状态**: ✅ 完成
 
 ---
@@ -10,10 +10,10 @@
 
 实现 `D:\SL-RDAF\src\slrdaf\observation\verification.py` 中的：
 - `load_rule_library()` — 加载三类核心验证规则
-- `verify_checkpoint()` — 对单个 checkpoint 应用所有规则
-- `verify_checkpoint_sequence()` — 对序列中所有 checkpoint 应用规则
+- `verify_checkpoint()` — 对单个 step 应用所有规则
+- `verify_checkpoint_sequence()` — 对序列中所有 step 应用规则
 
-本步骤只生成检查点级验证结果 v_{i,t}，不生成 §3.3 诊断特征。
+本步骤只生成检查点级验证结果 v_{i,t}，不生成 §3.3 analysis 特征。
 
 ---
 
@@ -106,7 +106,7 @@
 |------|------|
 | Beta smoothing | 属于 §3.3 诊断特征工程，禁止迁移 |
 | Verification entropy (H_i_t) | 属于 §3.3，禁止迁移 |
-| Diagnostic feature construction (A_i_t, I_plus, I_minus, rho) | 属于 §3.3，禁止迁移 |
+| Analysis feature construction (A_i_t, I_plus, I_minus, rho) | 属于 §3.3，禁止迁移 |
 | Calibration | 属于 §3.5，禁止迁移 |
 | Threshold selection | 属于 §3.5，禁止迁移 |
 | Training | 属于 §3.4，禁止迁移 |
@@ -139,7 +139,7 @@ Unverifiable reasons:
 **说明**: 
 - 由于未提供 schema context 和 database context，type 和 execution 规则多数返回 unverifiable=True
 - 这是预期行为，符合 unverifiable policy
-- syntax 规则全部通过（checkpoint 文本有效）
+- syntax 规则全部通过（step 文本有效）
 
 ---
 
@@ -148,14 +148,14 @@ Unverifiable reasons:
 ### 8.1 Verification Results 作为 Dependency Rule Trigger Evidence
 
 - `verification_results` 可作为 dependency extraction 的规则触发证据
-- 例如：syntax passed 的 checkpoint 可参与依赖提取
-- type unverifiable 的 checkpoint 可能需要特殊处理
+- 例如：syntax passed 的 step 可参与依赖提取
+- type unverifiable 的 step 可能需要特殊处理
 
 ### 8.2 禁止
 
 - Dependency extraction **不得**计算 I_plus/I_minus
 - Dependency extraction **不得**使用 verification results 生成 §3.3 特征
-- 只能使用 verification results 作为辅助信息（如过滤无效 checkpoint）
+- 只能使用 verification results 作为辅助信息（如过滤无效 step）
 
 ---
 

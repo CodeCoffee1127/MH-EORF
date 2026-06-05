@@ -22,7 +22,7 @@
 - `MIGRATION_AUDIT.md` — 初始审计
 - `PROTOCOL_CONFLICTS.md` — 协议冲突记录
 - `PROTOCOL_FREEZE_REPORT.md` — 冻结协议证据
-- `CHECKPOINT_MIGRATION_REPORT.md` — Checkpoint 迁移报告
+- `STEP_MIGRATION_REPORT.md` — Step 迁移报告
 - `VERIFICATION_MIGRATION_REPORT.md` — Verification 迁移报告
 - `DEPENDENCY_MIGRATION_REPORT.md` — Dependency 迁移报告
 - `PERTURBATION_MIGRATION_REPORT.md` — Perturbation 迁移报告

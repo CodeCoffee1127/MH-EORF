@@ -55,13 +55,13 @@ def test_x_dir_detection():
     print("✓ test_x_dir_detection passed")
 
 
-def test_normal_checkpoint_passes():
-    """Test that normal checkpoint dict passes."""
+def test_normal_step_passes():
+    """Test that normal step dict passes."""
     obj = {
         "sample_id": "s1",
-        "checkpoint_id": "s1::cp::0001",
+        "step_id": "s1::cp::0001",
         "t": 1,
-        "checkpoint_type": "column_reference",
+        "step_type": "column_reference",
         "content": {"sql": "SELECT * FROM t1"},
         "metadata": {},
     }
@@ -69,7 +69,7 @@ def test_normal_checkpoint_passes():
     # Should not raise
     assert_no_forbidden_fields(obj, context="test")
 
-    print("✓ test_normal_checkpoint_passes passed")
+    print("✓ test_normal_step_passes passed")
 
 
 def test_scan_returns_list():
@@ -91,6 +91,6 @@ if __name__ == "__main__":
     test_final_label_detection()
     test_tau_i_detection()
     test_x_dir_detection()
-    test_normal_checkpoint_passes()
+    test_normal_step_passes()
     test_scan_returns_list()
     print("\nAll leakage guard tests passed!")

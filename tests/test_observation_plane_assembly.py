@@ -8,7 +8,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from slrdaf.observation.checkpoints import Checkpoint, CheckpointSequence
+from slrdaf.observation.checkpoints import Step, StepSequence
 from slrdaf.observation.verification import VerificationResult
 from slrdaf.observation.dependencies import DependencySet, DependencyEdge
 from slrdaf.observation.perturbations import PerturbationResponse
@@ -17,27 +17,27 @@ from slrdaf.observation.observation_plane import assemble_observation_plane
 
 def test_assemble_observation_plane():
     """Test basic observation plane assembly."""
-    # Create a minimal sequence with 2 checkpoints
-    checkpoints = [
-        Checkpoint(
+    # Create a minimal sequence with 2 steps
+    steps = [
+        Step(
             sample_id="sample001",
-            checkpoint_id="sample001::cp::0001",
+            step_id="sample001::cp::0001",
             t=1,
-            checkpoint_type="column_reference",
+            step_type="column_reference",
             content={"sql": "SELECT * FROM t1"},
         ),
-        Checkpoint(
+        Step(
             sample_id="sample001",
-            checkpoint_id="sample001::cp::0002",
+            step_id="sample001::cp::0002",
             t=2,
-            checkpoint_type="predicate_binding",
+            step_type="predicate_binding",
             content={"sql": "WHERE t1.a = 1"},
         ),
     ]
 
-    sequence = CheckpointSequence(
+    sequence = StepSequence(
         sample_id="sample001",
-        checkpoints=checkpoints,
+        checkpoints=steps,
         protocol_hash="a" * 64,
     )
 

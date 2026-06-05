@@ -14,7 +14,7 @@ from typing import Any, Optional
 
 @dataclass
 class DependencyEdge:
-    """A single dependency edge between checkpoints."""
+    """A single dependency edge between steps."""
 
     predecessor_id: str
     successor_id: str
@@ -24,10 +24,10 @@ class DependencyEdge:
 
 @dataclass
 class DependencySet:
-    """Historical dependency set E_minus for a checkpoint."""
+    """Historical dependency set E_minus for a step."""
 
     sample_id: str
-    checkpoint_id: str
+    step_id: str
     t: int
     E_minus: list[str]
     dependency_edges: list[DependencyEdge]
@@ -49,27 +49,27 @@ _SQL_KEYWORDS = {
 }
 
 
-def _build_checkpoint_lookup(sequence) -> dict[str, Any]:
-    """Build lookup dict: checkpoint_id -> Checkpoint."""
-    return {cp.checkpoint_id: cp for cp in sequence.checkpoints}
+def _build_step_lookup(sequence) -> dict[str, Any]:
+    """Build lookup dict: step_id -> Step."""
+    return {cp.step_id: cp for cp in sequence.steps}
 
 
-def _previous_checkpoints(sequence, checkpoint) -> list[Any]:
-    """Return checkpoints with t < current checkpoint t."""
-    return [cp for cp in sequence.checkpoints if cp.t < checkpoint.t]
+def _previous_steps(sequence, step) -> list[Any]:
+    """Return steps with t < current step t."""
+    return [cp for cp in sequence.steps if cp.t < step.t]
 
 
-def _extract_checkpoint_text(checkpoint) -> str:
-    """Extract text content from checkpoint."""
-    content = checkpoint.content
+def _extract_step_text(step) -> str:
+    """Extract text content from step."""
+    content = step.content
     if isinstance(content, dict):
         return str(content.get("text", "") or content.get("normalized", ""))
     return str(content)
 
 
-def _extract_checkpoint_clause(checkpoint) -> str | None:
-    """Extract SQL clause from checkpoint content."""
-    content = checkpoint.content
+def _extract_step_clause(step) -> str | None:
+    """Extract SQL clause from step content."""
+    content = step.content
     if isinstance(content, dict):
         return content.get("clause")
     return None
@@ -108,27 +108,27 @@ def _load_verification_results(context: dict) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 def _infer_sql_clause_order_deps(
-    sequence, checkpoint: Any
+    sequence, step: Any
 ) -> list[DependencyEdge]:
     """Infer dependencies based on SQL clause order."""
     edges = []
-    cp_type = checkpoint.checkpoint_type
-    prev_cps = _previous_checkpoints(sequence, checkpoint)
+    cp_type = step.step_type
+    prev_cps = _previous_steps(sequence, step)
 
     if cp_type == "column_reference":
         # SELECT depends on nearest schema_linking (FROM/JOIN)
         for pred in reversed(prev_cps):
-            if pred.checkpoint_type == "schema_linking":
+            if pred.step_type == "schema_linking":
                 edges.append(
                     DependencyEdge(
-                        predecessor_id=pred.checkpoint_id,
-                        successor_id=checkpoint.checkpoint_id,
+                        predecessor_id=pred.step_id,
+                        successor_id=step.step_id,
                         dependency_type="sql_clause_order:schema_to_column",
                         evidence={
                             "rule": "sql_clause_order",
-                            "current_checkpoint_type": cp_type,
-                            "predecessor_checkpoint_type": pred.checkpoint_type,
-                            "current_t": checkpoint.t,
+                            "current_step_type": cp_type,
+                            "predecessor_step_type": pred.step_type,
+                            "current_t": step.t,
                             "predecessor_t": pred.t,
                         },
                     )
@@ -138,17 +138,17 @@ def _infer_sql_clause_order_deps(
     elif cp_type == "predicate_binding":
         # WHERE/HAVING depends on schema_linking
         for pred in reversed(prev_cps):
-            if pred.checkpoint_type == "schema_linking":
+            if pred.step_type == "schema_linking":
                 edges.append(
                     DependencyEdge(
-                        predecessor_id=pred.checkpoint_id,
-                        successor_id=checkpoint.checkpoint_id,
+                        predecessor_id=pred.step_id,
+                        successor_id=step.step_id,
                         dependency_type="sql_clause_order:schema_to_predicate",
                         evidence={
                             "rule": "sql_clause_order",
-                            "current_checkpoint_type": cp_type,
-                            "predecessor_checkpoint_type": pred.checkpoint_type,
-                            "current_t": checkpoint.t,
+                            "current_step_type": cp_type,
+                            "predecessor_step_type": pred.step_type,
+                            "current_t": step.t,
                             "predecessor_t": pred.t,
                         },
                     )
@@ -158,22 +158,22 @@ def _infer_sql_clause_order_deps(
     elif cp_type == "aggregation_or_ordering":
         # GROUP BY / ORDER BY depends on column_reference or schema_linking
         for pred in reversed(prev_cps):
-            if pred.checkpoint_type in ("column_reference", "schema_linking"):
+            if pred.step_type in ("column_reference", "schema_linking"):
                 dep_type = (
                     "sql_clause_order:column_to_aggregation"
-                    if pred.checkpoint_type == "column_reference"
+                    if pred.step_type == "column_reference"
                     else "sql_clause_order:schema_to_aggregation"
                 )
                 edges.append(
                     DependencyEdge(
-                        predecessor_id=pred.checkpoint_id,
-                        successor_id=checkpoint.checkpoint_id,
+                        predecessor_id=pred.step_id,
+                        successor_id=step.step_id,
                         dependency_type=dep_type,
                         evidence={
                             "rule": "sql_clause_order",
-                            "current_checkpoint_type": cp_type,
-                            "predecessor_checkpoint_type": pred.checkpoint_type,
-                            "current_t": checkpoint.t,
+                            "current_step_type": cp_type,
+                            "predecessor_step_type": pred.step_type,
+                            "current_t": step.t,
                             "predecessor_t": pred.t,
                         },
                     )
@@ -183,17 +183,17 @@ def _infer_sql_clause_order_deps(
     elif cp_type == "schema_linking":
         # JOIN depends on previous schema_linking (chain)
         for pred in reversed(prev_cps):
-            if pred.checkpoint_type == "schema_linking":
+            if pred.step_type == "schema_linking":
                 edges.append(
                     DependencyEdge(
-                        predecessor_id=pred.checkpoint_id,
-                        successor_id=checkpoint.checkpoint_id,
+                        predecessor_id=pred.step_id,
+                        successor_id=step.step_id,
                         dependency_type="sql_clause_order:schema_chain",
                         evidence={
                             "rule": "sql_clause_order",
-                            "current_checkpoint_type": cp_type,
-                            "predecessor_checkpoint_type": pred.checkpoint_type,
-                            "current_t": checkpoint.t,
+                            "current_step_type": cp_type,
+                            "predecessor_step_type": pred.step_type,
+                            "current_t": step.t,
                             "predecessor_t": pred.t,
                         },
                     )
@@ -204,31 +204,31 @@ def _infer_sql_clause_order_deps(
 
 
 def _infer_identifier_overlap_deps(
-    sequence, checkpoint: Any
+    sequence, step: Any
 ) -> list[DependencyEdge]:
     """Infer dependencies based on identifier overlap."""
     edges = []
-    curr_text = _extract_checkpoint_text(checkpoint)
+    curr_text = _extract_step_text(step)
     curr_ids = _extract_identifiers(curr_text)
     if not curr_ids:
         return edges
 
-    prev_cps = _previous_checkpoints(sequence, checkpoint)
+    prev_cps = _previous_steps(sequence, step)
     for pred in prev_cps:
-        pred_text = _extract_checkpoint_text(pred)
+        pred_text = _extract_step_text(pred)
         pred_ids = _extract_identifiers(pred_text)
         shared = curr_ids & pred_ids
         if shared:
             edges.append(
                 DependencyEdge(
-                    predecessor_id=pred.checkpoint_id,
-                    successor_id=checkpoint.checkpoint_id,
+                    predecessor_id=pred.step_id,
+                    successor_id=step.step_id,
                     dependency_type="identifier_overlap",
                     evidence={
                         "rule": "identifier_overlap",
-                        "current_checkpoint_type": checkpoint.checkpoint_type,
-                        "predecessor_checkpoint_type": pred.checkpoint_type,
-                        "current_t": checkpoint.t,
+                        "current_step_type": step.step_type,
+                        "predecessor_step_type": pred.step_type,
+                        "current_t": step.t,
                         "predecessor_t": pred.t,
                         "shared_identifiers": sorted(list(shared)),
                     },
@@ -238,16 +238,16 @@ def _infer_identifier_overlap_deps(
 
 
 def _infer_explicit_parent_deps(
-    sequence, checkpoint: Any
+    sequence, step: Any
 ) -> list[DependencyEdge]:
     """Infer dependencies from explicit parent evidence in metadata/content."""
     edges = []
-    lookup = _build_checkpoint_lookup(sequence)
+    lookup = _build_step_lookup(sequence)
 
     # Check metadata and content for parent info
     parent_ids = []
-    meta = checkpoint.metadata or {}
-    content = checkpoint.content if isinstance(checkpoint.content, dict) else {}
+    meta = step.metadata or {}
+    content = step.content if isinstance(step.content, dict) else {}
 
     for key in ("parent_ids", "parents", "predecessors", "dependencies", "dependency_edges", "source_dependencies", "legacy_parent_ids"):
         val = meta.get(key) or content.get(key)
@@ -263,19 +263,19 @@ def _infer_explicit_parent_deps(
         pred_cp = lookup.get(pid)
         if pred_cp is None:
             continue
-        if pred_cp.t >= checkpoint.t:
+        if pred_cp.t >= step.t:
             continue  # Filter future parents
 
         edges.append(
             DependencyEdge(
                 predecessor_id=pid,
-                successor_id=checkpoint.checkpoint_id,
+                successor_id=step.step_id,
                 dependency_type="explicit_parent",
                 evidence={
                     "rule": "explicit_parent",
-                    "current_checkpoint_type": checkpoint.checkpoint_type,
-                    "predecessor_checkpoint_type": pred_cp.checkpoint_type,
-                    "current_t": checkpoint.t,
+                    "current_step_type": step.step_type,
+                    "predecessor_step_type": pred_cp.step_type,
+                    "current_t": step.t,
                     "predecessor_t": pred_cp.t,
                     "source_field": "metadata/content parent reference",
                 },
@@ -285,15 +285,15 @@ def _infer_explicit_parent_deps(
 
 
 def _infer_verification_evidence(
-    checkpoint: Any, verification_results: list[dict]
+    step: Any, verification_results: list[dict]
 ) -> dict:
     """Extract verification context for evidence. Does NOT create risk/score."""
-    def _get_checkpoint_id(vr):
+    def _get_step_id(vr):
         if isinstance(vr, dict):
-            return vr.get("checkpoint_id", "")
-        return getattr(vr, "checkpoint_id", "")
+            return vr.get("step_id", "")
+        return getattr(vr, "step_id", "")
 
-    vr_for_cp = [vr for vr in verification_results if _get_checkpoint_id(vr) == checkpoint.checkpoint_id]
+    vr_for_cp = [vr for vr in verification_results if _get_step_id(vr) == step.step_id]
 
     context_summary = {}
     for vr in vr_for_cp:
@@ -321,14 +321,14 @@ def _infer_verification_evidence(
 # ---------------------------------------------------------------------------
 
 def extract_dependency_set(
-    sequence, checkpoint: Any, context: dict, protocol
+    sequence, step: Any, context: dict, protocol
 ) -> DependencySet:
     """
-    Extract dependency set for a single checkpoint.
+    Extract dependency set for a single step.
 
     Args:
-        sequence: CheckpointSequence instance
-        checkpoint: Checkpoint instance
+        sequence: StepSequence instance
+        step: Step instance
         context: Extraction context (may contain verification_results)
         protocol: ObservationProtocol instance
 
@@ -338,17 +338,17 @@ def extract_dependency_set(
     all_edges = []
 
     # Rule A: SQL clause order
-    all_edges.extend(_infer_sql_clause_order_deps(sequence, checkpoint))
+    all_edges.extend(_infer_sql_clause_order_deps(sequence, step))
 
     # Rule B: Identifier overlap
-    all_edges.extend(_infer_identifier_overlap_deps(sequence, checkpoint))
+    all_edges.extend(_infer_identifier_overlap_deps(sequence, step))
 
     # Rule C: Explicit parent evidence
-    all_edges.extend(_infer_explicit_parent_deps(sequence, checkpoint))
+    all_edges.extend(_infer_explicit_parent_deps(sequence, step))
 
     # Rule D: Verification evidence (as evidence only, not creating edges)
     vr_results = _load_verification_results(context)
-    vr_context = _infer_verification_evidence(checkpoint, vr_results)
+    vr_context = _infer_verification_evidence(step, vr_results)
 
     # Deduplicate
     all_edges = _deduplicate_edges(all_edges)
@@ -356,7 +356,7 @@ def extract_dependency_set(
     # Build E_minus from edges
     e_minus = sorted(
         list({e.predecessor_id for e in all_edges}),
-        key=lambda cid: _build_checkpoint_lookup(sequence).get(cid, checkpoint).t,
+        key=lambda cid: _build_step_lookup(sequence).get(cid, step).t,
     )
 
     # Metadata
@@ -367,9 +367,9 @@ def extract_dependency_set(
     }
 
     return DependencySet(
-        sample_id=checkpoint.sample_id,
-        checkpoint_id=checkpoint.checkpoint_id,
-        t=checkpoint.t,
+        sample_id=step.sample_id,
+        step_id=step.step_id,
+        t=step.t,
         E_minus=e_minus,
         dependency_edges=all_edges,
         extraction_method="rule_based_heuristic",
@@ -382,10 +382,10 @@ def extract_all_dependency_sets(
     sequence, context: dict, protocol
 ) -> list[DependencySet]:
     """
-    Extract dependency sets for all checkpoints in sequence.
+    Extract dependency sets for all steps in sequence.
 
     Args:
-        sequence: CheckpointSequence instance
+        sequence: StepSequence instance
         context: Extraction context
         protocol: ObservationProtocol instance
 
@@ -393,7 +393,7 @@ def extract_all_dependency_sets(
         List of DependencySet instances
     """
     dep_sets = []
-    for cp in sequence.checkpoints:
+    for cp in sequence.steps:
         ds = extract_dependency_set(sequence, cp, context, protocol)
         dep_sets.append(ds)
 
@@ -410,26 +410,26 @@ def validate_historical_dependencies(
     Validate that all dependencies are historical (predecessor t < current t).
 
     Args:
-        sequence: CheckpointSequence instance
+        sequence: StepSequence instance
         dependency_sets: List of DependencySet instances
 
     Raises:
         ValueError: If any predecessor has t >= current t
     """
-    checkpoint_map = {cp.checkpoint_id: cp for cp in sequence.checkpoints}
+    step_map = {cp.step_id: cp for cp in sequence.steps}
 
     for dep_set in dependency_sets:
-        current_cp = checkpoint_map.get(dep_set.checkpoint_id)
+        current_cp = step_map.get(dep_set.step_id)
         if current_cp is None:
             raise ValueError(
-                f"Checkpoint {dep_set.checkpoint_id} not found in sequence"
+                f"Step {dep_set.step_id} not found in sequence"
             )
 
         current_t = current_cp.t
 
         # Validate E_minus
         for pred_id in dep_set.E_minus:
-            pred_cp = checkpoint_map.get(pred_id)
+            pred_cp = step_map.get(pred_id)
             if pred_cp is None:
                 raise ValueError(
                     f"Predecessor {pred_id} not found in sequence"
@@ -442,7 +442,7 @@ def validate_historical_dependencies(
 
         # Validate dependency edges
         for edge in dep_set.dependency_edges:
-            pred_cp = checkpoint_map.get(edge.predecessor_id)
+            pred_cp = step_map.get(edge.predecessor_id)
             if pred_cp is None:
                 raise ValueError(
                     f"Predecessor {edge.predecessor_id} not found in sequence"

@@ -1,7 +1,7 @@
 # Migration: Dependency Sets
 
-> **创建时间**: 2026-06-03  
-> **步骤**: 第 6 步 — 增量迁移 dependency extraction  
+> **创建时间**: 2026-06-03
+> **步骤**: 第 6 步 — 增量迁移 dependency extraction
 > **状态**: ✅ 完成
 
 ---
@@ -9,8 +9,8 @@
 ## 1. 本步骤迁移目标
 
 实现 `D:\SL-RDAF\src\slrdaf\observation\dependencies.py` 中的：
-- `extract_dependency_set()` — 提取单个 checkpoint 的历史依赖集合 E_minus
-- `extract_all_dependency_sets()` — 提取序列中所有 checkpoint 的依赖集合
+- `extract_dependency_set()` — 提取单个 step 的历史依赖集合 E_minus
+- `extract_all_dependency_sets()` — 提取序列中所有 step 的依赖集合
 
 本步骤只生成 DependencySet、DependencyEdge、E_minus、dependency_edges，不生成 §3.3 依赖风险特征。
 
@@ -43,13 +43,13 @@
 
 ## 4. E_minus 定义
 
-E_minus_{i,t} 是 checkpoint p_{i,t} 的历史结构依赖集合，包含所有 t' < t 的 checkpoint_id。
+E_minus_{i,t} 是 step p_{i,t} 的历史结构依赖集合，包含所有 t' < t 的 step_id。
 
 **规则**：
-- 只包含历史 checkpoint
-- 不包含当前 checkpoint
-- 不包含未来 checkpoint
-- 不包含不存在 checkpoint
+- 只包含历史 step
+- 不包含当前 step
+- 不包含未来 step
+- 不包含不存在 step
 - 如果无法确定依赖，E_minus=[]
 
 ---
@@ -57,8 +57,8 @@ E_minus_{i,t} 是 checkpoint p_{i,t} 的历史结构依赖集合，包含所有 
 ## 5. DependencyEdges 结构
 
 每条边包含：
-- `predecessor_id`: 前驱 checkpoint_id
-- `successor_id`: 后继 checkpoint_id
+- `predecessor_id`: 前驱 step_id
+- `successor_id`: 后继 step_id
 - `dependency_type`: 依赖类型
 - `evidence`: 证据字典
 
@@ -66,8 +66,8 @@ E_minus_{i,t} 是 checkpoint p_{i,t} 的历史结构依赖集合，包含所有 
 ```json
 {
   "rule": "identifier_overlap",
-  "current_checkpoint_type": "predicate_binding",
-  "predecessor_checkpoint_type": "column_reference",
+  "current_step_type": "predicate_binding",
+  "predecessor_step_type": "column_reference",
   "current_t": 3,
   "predecessor_t": 1,
   "shared_identifiers": ["temperature", "device_id"]
@@ -79,27 +79,27 @@ E_minus_{i,t} 是 checkpoint p_{i,t} 的历史结构依赖集合，包含所有 
 ## 6. 四类依赖证据
 
 ### A. SQL Clause Order Dependencies
-基于 checkpoint_type 推断结构依赖：
+基于 step_type 推断结构依赖：
 - `column_reference` → 依赖最近的 `schema_linking`
 - `predicate_binding` → 依赖 `schema_linking`
 - `aggregation_or_ordering` → 依赖 `column_reference` 或 `schema_linking`
 - `schema_linking` → 依赖前一个 `schema_linking` (chain)
 
 ### B. Identifier Overlap Dependencies
-提取非 SQL 关键字 identifier，检查当前 checkpoint 与历史 checkpoint 的共享标识符。
+提取非 SQL 关键字 identifier，检查当前 step 与历史 step 的共享标识符。
 - 忽略 SQL keywords (SELECT, FROM, WHERE, JOIN 等)
 - dependency_type = "identifier_overlap"
 - evidence 记录 shared_identifiers
 
 ### C. Explicit Parent Evidence
-从 checkpoint.metadata 或 checkpoint.content 中提取 parent 信息：
+从 step.metadata 或 step.content 中提取 parent 信息：
 - parent_ids, parents, predecessors, dependencies 等字段
 - 只保留存在于 sequence 且 t 更小的 parent
 - 过滤 future parent 和 missing parent
 
 ### D. Verification Rule-Trigger Evidence
 使用 context 中的 verification_results 作为证据：
-- syntax passed=True → 当前 checkpoint 可作为结构节点参与依赖
+- syntax passed=True → 当前 step 可作为结构节点参与依赖
 - type/execution unverifiable=True → 记录 "verification_context_unavailable"
 - **不得**根据 passed/unverifiable 计算权重
 - **不得**生成 I_plus/I_minus/rho
@@ -124,7 +124,7 @@ E_minus_{i,t} 是 checkpoint p_{i,t} 的历史结构依赖集合，包含所有 
 | Inec | 属于 §3.3，禁止迁移 |
 | rho / risk memory | 属于 §3.3，禁止迁移 |
 | Dependency weights | 属于 §3.3，禁止迁移 |
-| Diagnostic features (A_i_t, H_i_t, x_dir, x_res) | 属于 §3.3，禁止迁移 |
+| Analysis features (A_i_t, H_i_t, x_dir, x_res) | 属于 §3.3，禁止迁移 |
 | Training/calibration/visualization | 属于 §3.4/§4.x，禁止迁移 |
 | sqlglot 依赖 | 新项目使用标准库 re，不引入新依赖 |
 | compute_dependency_strength() | 计算 I_plus/I_minus，禁止迁移 |
@@ -151,7 +151,7 @@ Unverifiable not treated as failure: true
 ```
 
 **说明**:
-- 10 个 empty dep sets 是因为 t=1 的 checkpoint 没有历史依赖
+- 10 个 empty dep sets 是因为 t=1 的 step 没有历史依赖
 - 依赖类型分布符合 SQL clause order 和 identifier overlap 规则
 - verification evidence 仅记录在 metadata 中，未创建风险特征
 
@@ -163,7 +163,7 @@ Unverifiable not treated as failure: true
 
 - `dependency_sets_preview.jsonl` 将作为 perturbation response 的 predecessor 约束
 - Prompt 7 只能扰动 E_minus 中的历史 predecessor
-- 不得扰动未来 checkpoint 或不存在 checkpoint
+- 不得扰动未来 step 或不存在 step
 
 ### 10.2 禁止
 

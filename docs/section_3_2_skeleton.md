@@ -1,7 +1,7 @@
 # Section 3.2 Observation Plane Construction - Skeleton
 
-> **创建时间**: 2026-06-03  
-> **步骤**: 第 3 步 — 创建 §3.2 观测平面生成代码骨架与数据 schema  
+> **创建时间**: 2026-06-03
+> **步骤**: 第 3 步 — 创建 §3.2 观测平面生成代码骨架与数据 schema
 > **状态**: 骨架就绪，等待 Prompt 4-8 迁移实现
 
 ---
@@ -21,7 +21,7 @@ D:\SL-RDAF\
 │   ├── io.py                        # JSON/JSONL IO 工具
 │   └── leakage.py                   # 防泄漏检查
 ├── schemas\                         # JSON Schema 定义
-│   ├── checkpoint.schema.json
+│   ├── step.schema.json
 │   ├── verification_result.schema.json
 │   ├── dependency_set.schema.json
 │   ├── perturbation_response.schema.json
@@ -59,10 +59,10 @@ D:\SL-RDAF\
   - protocol_hash 必须为 64 字符
   - llm_version、rule_library_version、perturbation_family_version、N、M 未确认时保持 None
 
-### 2.2 checkpoints.py
-- **职责**: 检查点序列构造
-- **核心数据类**: `Checkpoint`, `CheckpointSequence`
-- **已实现**: `assign_checkpoint_ids()` — 分配 checkpoint ID
+### 2.2 steps.py
+- **职责**: 步骤序列构造
+- **核心数据类**: `Step`, `StepSequence`
+- **已实现**: `assign_step_ids()` — 分配 step ID
 - **待迁移**: `build_checkpoint_sequence()` — Prompt 4
 
 ### 2.3 verification.py
@@ -104,10 +104,10 @@ D:\SL-RDAF\
 
 | Schema 文件 | 描述 | 核心字段 |
 |------------|------|---------|
-| `checkpoint.schema.json` | 检查点定义 | sample_id, checkpoint_id, t, checkpoint_type, content |
-| `verification_result.schema.json` | 验证结果 | sample_id, checkpoint_id, rule_id, rule_type, passed, unverifiable |
-| `dependency_set.schema.json` | 依赖集合 | sample_id, checkpoint_id, E_minus, dependency_edges |
-| `perturbation_response.schema.json` | 扰动响应 | sample_id, checkpoint_id, perturbation_payload_hash, response_summary |
+| `step.schema.json` | 检查点定义 | sample_id, step_id, t, step_type, content |
+| `verification_result.schema.json` | 验证结果 | sample_id, step_id, rule_id, rule_type, passed, unverifiable |
+| `dependency_set.schema.json` | 依赖集合 | sample_id, step_id, E_minus, dependency_edges |
+| `perturbation_response.schema.json` | 扰动响应 | sample_id, step_id, perturbation_payload_hash, response_summary |
 | `observation_plane.schema.json` | 观测平面 | sample_id, observation_plane[], leakage_check |
 | `observation_protocol.schema.json` | 协议配置 | manifest_name, protocol_hash, determinism, scope |
 
@@ -117,8 +117,8 @@ D:\SL-RDAF\
 
 | 论文符号 | 代码模块 | 数据类/函数 |
 |---------|---------|------------|
-| p_{i,t} | checkpoints.py | `Checkpoint` |
-| P_i (检查点序列) | checkpoints.py | `CheckpointSequence` |
+| p_{i,t} | steps.py | `Step` |
+| P_i (步骤序列) | steps.py | `StepSequence` |
 | v_{i,t} | verification.py | `VerificationResult` |
 | E_minus_{i,t} | dependencies.py | `DependencySet.E_minus` |
 | R_{i,t} | perturbations.py | `PerturbationResponse` |
@@ -132,9 +132,9 @@ D:\SL-RDAF\
 
 | 旧项目文件 | 新模块 | 迁移时机 |
 |-----------|-------|---------|
-| `code/step_extractor/step_extractor.py` | `checkpoints.py` | Prompt 4 |
-| `code/step_extractor/segmentation.py` | `checkpoints.py` | Prompt 4 |
-| `code/step_extractor/schema.py` | `checkpoints.py` | Prompt 4 |
+| `code/step_extractor/step_extractor.py` | `steps.py` | Prompt 4 |
+| `code/step_extractor/segmentation.py` | `steps.py` | Prompt 4 |
+| `code/step_extractor/schema.py` | `steps.py` | Prompt 4 |
 | `code/verifier/vsp_verifier.py` | `verification.py` | Prompt 5 |
 | `code/verifier/constraint_rules.py` | `verification.py` | Prompt 5 |
 | `code/cpfc/dependency_extractor.py` | `dependencies.py` | Prompt 6 |
@@ -161,7 +161,7 @@ D:\SL-RDAF\
 
 | Prompt | 迁移模块 | 实现函数 |
 |--------|---------|---------|
-| **Prompt 4** | `checkpoints.py` | `build_checkpoint_sequence()` |
+| **Prompt 4** | `steps.py` | `build_step_sequence()` |
 | **Prompt 5** | `verification.py` | `verify_checkpoint()`, `verify_checkpoint_sequence()` |
 | **Prompt 6** | `dependencies.py` | `extract_dependency_set()`, `extract_all_dependency_sets()` |
 | **Prompt 7** | `perturbations.py` | `perturb_checkpoint()`, `generate_perturbation_responses()` |

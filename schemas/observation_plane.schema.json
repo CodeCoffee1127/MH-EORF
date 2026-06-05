@@ -3,7 +3,12 @@
   "title": "ObservationPlane",
   "description": "Complete observation plane for a sample (Section 3.2)",
   "type": "object",
-  "required": ["sample_id", "observation_plane", "protocol_hash", "leakage_check"],
+  "required": [
+    "sample_id",
+    "observation_plane",
+    "protocol_hash",
+    "leakage_check"
+  ],
   "properties": {
     "sample_id": {
       "type": "string",
@@ -19,18 +24,23 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["p", "v", "E_minus", "R"],
+        "required": [
+          "p",
+          "v",
+          "E_minus",
+          "R"
+        ],
         "properties": {
           "p": {
-            "$ref": "checkpoint.schema.json",
-            "description": "Checkpoint"
+            "$ref": "step.schema.json",
+            "description": "Step"
           },
           "v": {
             "type": "array",
             "items": {
               "$ref": "verification_result.schema.json"
             },
-            "description": "Verification results for this checkpoint"
+            "description": "Verification results for this step"
           },
           "E_minus": {
             "type": "array",
@@ -44,7 +54,7 @@
             "items": {
               "$ref": "perturbation_response.schema.json"
             },
-            "description": "Perturbation responses for this checkpoint"
+            "description": "Perturbation responses for this step"
           }
         }
       },
@@ -53,7 +63,7 @@
     "leakage_check": {
       "type": "object",
       "required": [
-        "future_checkpoint_used",
+        "future_step_used",
         "tau_used",
         "final_label_used",
         "horizon_label_used",
@@ -62,7 +72,7 @@
       "properties": {
         "future_checkpoint_used": {
           "type": "boolean",
-          "description": "Whether future checkpoints were used"
+          "description": "Whether future steps were used"
         },
         "tau_used": {
           "type": "boolean",

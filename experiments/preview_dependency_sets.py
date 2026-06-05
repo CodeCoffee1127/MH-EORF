@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-Preview dependency sets from checkpoint and verification previews.
+Preview dependency sets from step and verification previews.
 
-Reads checkpoint preview JSONL and verification preview JSONL,
+Reads step preview JSONL and verification preview JSONL,
 extracts dependency sets, and outputs dependency preview JSONL + report.
 """
 
@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from slrdaf.observation.protocol import load_protocol
-from slrdaf.observation.checkpoints import Checkpoint, CheckpointSequence
+from slrdaf.observation.steps import Step, StepSequence
 from slrdaf.observation.dependencies import extract_all_dependency_sets
 from slrdaf.observation import io
 
@@ -27,9 +27,9 @@ from slrdaf.observation import io
 def main():
     parser = argparse.ArgumentParser(description="Preview dependency sets")
     parser.add_argument(
-        "--checkpoint-preview",
+        "--step-preview",
         default="D:\\SL-RDAF\\artifacts\\observation_debug\\checkpoint_sequence_preview.jsonl",
-        help="Path to checkpoint preview JSONL",
+        help="Path to step preview JSONL",
     )
     parser.add_argument(
         "--verification-preview",
@@ -50,13 +50,13 @@ def main():
     print(f"Loading protocol from: {args.manifest}")
     protocol = load_protocol(args.manifest)
 
-    # Load checkpoint preview
-    cp_preview_path = Path(args.checkpoint_preview)
+    # Load step preview
+    cp_preview_path = Path(args.step_preview)
     if not cp_preview_path.exists():
-        print(f"ERROR: Checkpoint preview not found: {cp_preview_path}")
+        print(f"ERROR: Step preview not found: {cp_preview_path}")
         sys.exit(1)
     cp_records = io.read_jsonl(str(cp_preview_path))
-    print(f"Loaded {len(cp_records)} checkpoint preview records")
+    print(f"Loaded {len(cp_records)} step preview records")
 
     # Load verification preview (optional)
     vr_preview_path = Path(args.verification_preview)
@@ -99,24 +99,24 @@ def main():
         report["samples_attempted"] += 1
         try:
             sample_id = rec["sample_id"]
-            checkpoints_data = rec.get("checkpoints", [])
+            checkpoints_data = rec.get("steps", [])
 
-            # Reconstruct checkpoints
-            checkpoints = []
+            # Reconstruct steps
+            steps = []
             for cp_data in checkpoints_data:
-                cp = Checkpoint(
+                cp = Step(
                     sample_id=cp_data["sample_id"],
-                    checkpoint_id=cp_data["checkpoint_id"],
+                    step_id=cp_data["step_id"],
                     t=cp_data["t"],
-                    checkpoint_type=cp_data["checkpoint_type"],
+                    step_type=cp_data["step_type"],
                     content=cp_data.get("content", {}),
                     metadata=cp_data.get("metadata", {}),
                 )
-                checkpoints.append(cp)
+                steps.append(cp)
 
-            sequence = CheckpointSequence(
+            sequence = StepSequence(
                 sample_id=sample_id,
-                checkpoints=checkpoints,
+                steps=steps,
                 protocol_hash=rec.get("protocol_hash", protocol.protocol_hash),
             )
 

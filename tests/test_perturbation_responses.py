@@ -9,12 +9,12 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from slrdaf.observation.checkpoints import Checkpoint, CheckpointSequence
+from slrdaf.observation.checkpoints import Step, StepSequence
 from slrdaf.observation.dependencies import DependencySet, DependencyEdge
 from slrdaf.observation.verification import load_rule_library
 from slrdaf.observation.perturbations import (
     load_perturbation_families,
-    perturb_checkpoint,
+    perturb_step,
     generate_perturbation_responses,
     hash_perturbation_payload,
 )
@@ -44,18 +44,18 @@ def test_load_families():
 
 def test_identifier_mask_deterministic():
     """Test identifier mask is deterministic."""
-    cp = Checkpoint(
+    step = Step(
         sample_id="s1",
-        checkpoint_id="s1::cp::0001",
+        step_id="s1::cp::0001",
         t=1,
-        checkpoint_type="column_reference",
+        step_type="column_reference",
         content={"kind": "sql_clause", "text": "temperature", "clause": "SELECT"},
     )
     families = load_perturbation_families(MockProtocol())
     family = next(f for f in families if f.family_id == "structural.identifier_mask")
 
-    p1 = perturb_checkpoint(cp, family, MockProtocol())
-    p2 = perturb_checkpoint(cp, family, MockProtocol())
+    p1 = perturb_step(step, family, MockProtocol())
+    p2 = perturb_step(step, family, MockProtocol())
 
     assert hash_perturbation_payload(p1) == hash_perturbation_payload(p2)
 
@@ -64,17 +64,17 @@ def test_identifier_mask_deterministic():
 
 def test_numeric_value_shift():
     """Test numeric value shift."""
-    cp = Checkpoint(
+    step = Step(
         sample_id="s2",
-        checkpoint_id="s2::cp::0001",
+        step_id="s2::cp::0001",
         t=1,
-        checkpoint_type="predicate_binding",
+        step_type="predicate_binding",
         content={"kind": "sql_clause", "text": "WHERE value > 10", "clause": "WHERE"},
     )
     families = load_perturbation_families(MockProtocol())
     family = next(f for f in families if f.family_id == "numerical.value_shift")
 
-    p = perturb_checkpoint(cp, family, MockProtocol())
+    p = perturb_step(step, family, MockProtocol())
     assert p["safe_summary"]["changed"] is True
     assert p["safe_summary"]["changed_token_type"] == "number"
 
@@ -83,17 +83,17 @@ def test_numeric_value_shift():
 
 def test_operator_flip():
     """Test operator flip."""
-    cp = Checkpoint(
+    step = Step(
         sample_id="s3",
-        checkpoint_id="s3::cp::0001",
+        step_id="s3::cp::0001",
         t=1,
-        checkpoint_type="predicate_binding",
+        step_type="predicate_binding",
         content={"kind": "sql_clause", "text": "WHERE temperature > 30", "clause": "WHERE"},
     )
     families = load_perturbation_families(MockProtocol())
     family = next(f for f in families if f.family_id == "structural.operator_flip")
 
-    p = perturb_checkpoint(cp, family, MockProtocol())
+    p = perturb_step(step, family, MockProtocol())
     assert p["safe_summary"]["changed"] is True
     assert p["safe_summary"]["changed_token_type"] == "operator"
 
@@ -102,36 +102,36 @@ def test_operator_flip():
 
 def test_only_E_minus_perturbed():
     """Test that only E_minus predecessors are perturbed."""
-    checkpoints = [
-        Checkpoint(
+    steps = [
+        Step(
             sample_id="s4",
-            checkpoint_id="s4::cp::0001",
+            step_id="s4::cp::0001",
             t=1,
-            checkpoint_type="schema_linking",
+            step_type="schema_linking",
             content={"kind": "sql_clause", "text": "FROM sensors", "clause": "FROM"},
         ),
-        Checkpoint(
+        Step(
             sample_id="s4",
-            checkpoint_id="s4::cp::0002",
+            step_id="s4::cp::0002",
             t=2,
-            checkpoint_type="column_reference",
+            step_type="column_reference",
             content={"kind": "sql_clause", "text": "temperature", "clause": "SELECT"},
         ),
-        Checkpoint(
+        Step(
             sample_id="s4",
-            checkpoint_id="s4::cp::0003",
+            step_id="s4::cp::0003",
             t=3,
-            checkpoint_type="predicate_binding",
+            step_type="predicate_binding",
             content={"kind": "sql_clause", "text": "WHERE device_id = 3", "clause": "WHERE"},
         ),
     ]
-    sequence = CheckpointSequence(sample_id="s4", checkpoints=checkpoints, protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s4", steps=steps, protocol_hash="a" * 64)
 
     # E_minus for t3 only contains t1
     dep_sets = [
         DependencySet(
             sample_id="s4",
-            checkpoint_id="s4::cp::0001",
+            step_id="s4::cp::0001",
             t=1,
             E_minus=[],
             dependency_edges=[],
@@ -140,7 +140,7 @@ def test_only_E_minus_perturbed():
         ),
         DependencySet(
             sample_id="s4",
-            checkpoint_id="s4::cp::0002",
+            step_id="s4::cp::0002",
             t=2,
             E_minus=["s4::cp::0001"],
             dependency_edges=[],
@@ -149,7 +149,7 @@ def test_only_E_minus_perturbed():
         ),
         DependencySet(
             sample_id="s4",
-            checkpoint_id="s4::cp::0003",
+            step_id="s4::cp::0003",
             t=3,
             E_minus=["s4::cp::0001"],  # Only t1, not t2
             dependency_edges=[],
@@ -163,7 +163,7 @@ def test_only_E_minus_perturbed():
     responses = generate_perturbation_responses(sequence, dep_sets, context, rules, MockProtocol())
 
     # t3 should only perturb t1 (4 families)
-    t3_responses = [r for r in responses if r.checkpoint_id == "s4::cp::0003"]
+    t3_responses = [r for r in responses if r.step_id == "s4::cp::0003"]
     assert len(t3_responses) == 4, f"Expected 4 responses for t3, got {len(t3_responses)}"
     for r in t3_responses:
         assert r.perturbed_predecessor_id == "s4::cp::0001"
@@ -173,29 +173,29 @@ def test_only_E_minus_perturbed():
 
 def test_no_future_predecessor():
     """Test that future predecessors are skipped."""
-    checkpoints = [
-        Checkpoint(
+    steps = [
+        Step(
             sample_id="s5",
-            checkpoint_id="s5::cp::0001",
+            step_id="s5::cp::0001",
             t=1,
-            checkpoint_type="other",
+            step_type="other",
             content={"kind": "trace_step", "text": "step 1"},
         ),
-        Checkpoint(
+        Step(
             sample_id="s5",
-            checkpoint_id="s5::cp::0002",
+            step_id="s5::cp::0002",
             t=2,
-            checkpoint_type="other",
+            step_type="other",
             content={"kind": "trace_step", "text": "step 2"},
         ),
     ]
-    sequence = CheckpointSequence(sample_id="s5", checkpoints=checkpoints, protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s5", steps=steps, protocol_hash="a" * 64)
 
     # Invalid: t1 depends on t2 (future)
     dep_sets = [
         DependencySet(
             sample_id="s5",
-            checkpoint_id="s5::cp::0001",
+            step_id="s5::cp::0001",
             t=1,
             E_minus=["s5::cp::0002"],  # Future
             dependency_edges=[],
@@ -216,18 +216,18 @@ def test_no_future_predecessor():
 
 def test_response_schema_fields():
     """Test that PerturbationResponse contains required fields."""
-    cp = Checkpoint(
+    step = Step(
         sample_id="s6",
-        checkpoint_id="s6::cp::0001",
+        step_id="s6::cp::0001",
         t=1,
-        checkpoint_type="schema_linking",
+        step_type="schema_linking",
         content={"kind": "sql_clause", "text": "FROM t", "clause": "FROM"},
     )
-    sequence = CheckpointSequence(sample_id="s6", checkpoints=[cp], protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s6", steps=[step], protocol_hash="a" * 64)
     dep_sets = [
         DependencySet(
             sample_id="s6",
-            checkpoint_id="s6::cp::0001",
+            step_id="s6::cp::0001",
             t=1,
             E_minus=[],
             dependency_edges=[],
@@ -243,18 +243,18 @@ def test_response_schema_fields():
     assert len(responses) == 0
 
     # Add a predecessor
-    cp2 = Checkpoint(
+    step2 = Step(
         sample_id="s6",
-        checkpoint_id="s6::cp::0002",
+        step_id="s6::cp::0002",
         t=2,
-        checkpoint_type="column_reference",
+        step_type="column_reference",
         content={"kind": "sql_clause", "text": "x", "clause": "SELECT"},
     )
-    sequence.checkpoints.append(cp2)
+    sequence.steps.append(step2)
     dep_sets.append(
         DependencySet(
             sample_id="s6",
-            checkpoint_id="s6::cp::0002",
+            step_id="s6::cp::0002",
             t=2,
             E_minus=["s6::cp::0001"],
             dependency_edges=[],
@@ -267,7 +267,7 @@ def test_response_schema_fields():
 
     for r in responses:
         assert r.sample_id == "s6"
-        assert r.checkpoint_id == "s6::cp::0002"
+        assert r.step_id == "s6::cp::0002"
         assert r.t == 2
         assert r.perturbed_predecessor_id == "s6::cp::0001"
         assert r.perturbation_family in ["structural.identifier_mask", "structural.operator_flip", "numerical.value_shift", "structural.clause_marker_noise"]
@@ -280,24 +280,24 @@ def test_response_schema_fields():
 
 def test_before_after_summaries_only():
     """Test that before/after summaries only contain discrete rule fields."""
-    cp = Checkpoint(
+    step = Step(
         sample_id="s7",
-        checkpoint_id="s7::cp::0001",
+        step_id="s7::cp::0001",
         t=1,
-        checkpoint_type="schema_linking",
+        step_type="schema_linking",
         content={"kind": "sql_clause", "text": "FROM t", "clause": "FROM"},
     )
-    cp2 = Checkpoint(
+    step2 = Step(
         sample_id="s7",
-        checkpoint_id="s7::cp::0002",
+        step_id="s7::cp::0002",
         t=2,
-        checkpoint_type="column_reference",
+        step_type="column_reference",
         content={"kind": "sql_clause", "text": "x", "clause": "SELECT"},
     )
-    sequence = CheckpointSequence(sample_id="s7", checkpoints=[cp, cp2], protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s7", steps=[step, step2], protocol_hash="a" * 64)
     dep_sets = [
-        DependencySet(sample_id="s7", checkpoint_id="s7::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
-        DependencySet(sample_id="s7", checkpoint_id="s7::cp::0002", t=2, E_minus=["s7::cp::0001"], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
+        DependencySet(sample_id="s7", step_id="s7::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
+        DependencySet(sample_id="s7", step_id="s7::cp::0002", t=2, E_minus=["s7::cp::0001"], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
     ]
     context = {"verification_results": []}
     rules = load_rule_library(MockProtocol())
@@ -322,24 +322,24 @@ def test_before_after_summaries_only():
 
 def test_no_downstream_features():
     """Test that responses don't contain downstream features."""
-    cp = Checkpoint(
+    step = Step(
         sample_id="s8",
-        checkpoint_id="s8::cp::0001",
+        step_id="s8::cp::0001",
         t=1,
-        checkpoint_type="schema_linking",
+        step_type="schema_linking",
         content={"kind": "sql_clause", "text": "FROM t", "clause": "FROM"},
     )
-    cp2 = Checkpoint(
+    step2 = Step(
         sample_id="s8",
-        checkpoint_id="s8::cp::0002",
+        step_id="s8::cp::0002",
         t=2,
-        checkpoint_type="column_reference",
+        step_type="column_reference",
         content={"kind": "sql_clause", "text": "x", "clause": "SELECT"},
     )
-    sequence = CheckpointSequence(sample_id="s8", checkpoints=[cp, cp2], protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s8", steps=[step, step2], protocol_hash="a" * 64)
     dep_sets = [
-        DependencySet(sample_id="s8", checkpoint_id="s8::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
-        DependencySet(sample_id="s8", checkpoint_id="s8::cp::0002", t=2, E_minus=["s8::cp::0001"], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
+        DependencySet(sample_id="s8", step_id="s8::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
+        DependencySet(sample_id="s8", step_id="s8::cp::0002", t=2, E_minus=["s8::cp::0001"], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
     ]
     context = {"verification_results": []}
     rules = load_rule_library(MockProtocol())
@@ -360,24 +360,24 @@ def test_no_downstream_features():
 
 def test_deterministic_generation():
     """Test that generation is deterministic."""
-    cp = Checkpoint(
+    step = Step(
         sample_id="s9",
-        checkpoint_id="s9::cp::0001",
+        step_id="s9::cp::0001",
         t=1,
-        checkpoint_type="schema_linking",
+        step_type="schema_linking",
         content={"kind": "sql_clause", "text": "FROM t", "clause": "FROM"},
     )
-    cp2 = Checkpoint(
+    step2 = Step(
         sample_id="s9",
-        checkpoint_id="s9::cp::0002",
+        step_id="s9::cp::0002",
         t=2,
-        checkpoint_type="column_reference",
+        step_type="column_reference",
         content={"kind": "sql_clause", "text": "x", "clause": "SELECT"},
     )
-    sequence = CheckpointSequence(sample_id="s9", checkpoints=[cp, cp2], protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s9", steps=[step, step2], protocol_hash="a" * 64)
     dep_sets = [
-        DependencySet(sample_id="s9", checkpoint_id="s9::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
-        DependencySet(sample_id="s9", checkpoint_id="s9::cp::0002", t=2, E_minus=["s9::cp::0001"], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
+        DependencySet(sample_id="s9", step_id="s9::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
+        DependencySet(sample_id="s9", step_id="s9::cp::0002", t=2, E_minus=["s9::cp::0001"], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
     ]
     context = {"verification_results": []}
     rules = load_rule_library(MockProtocol())
@@ -394,16 +394,16 @@ def test_deterministic_generation():
 
 def test_empty_E_minus_allowed():
     """Test that empty E_minus produces no responses."""
-    cp = Checkpoint(
+    step = Step(
         sample_id="s10",
-        checkpoint_id="s10::cp::0001",
+        step_id="s10::cp::0001",
         t=1,
-        checkpoint_type="other",
+        step_type="other",
         content={"kind": "trace_step", "text": "step"},
     )
-    sequence = CheckpointSequence(sample_id="s10", checkpoints=[cp], protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s10", steps=[step], protocol_hash="a" * 64)
     dep_sets = [
-        DependencySet(sample_id="s10", checkpoint_id="s10::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
+        DependencySet(sample_id="s10", step_id="s10::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
     ]
     context = {"verification_results": []}
     rules = load_rule_library(MockProtocol())
@@ -416,29 +416,29 @@ def test_empty_E_minus_allowed():
 
 def test_unverifiable_not_failure():
     """Test that unverifiable is not treated as failed dependency."""
-    cp = Checkpoint(
+    step = Step(
         sample_id="s11",
-        checkpoint_id="s11::cp::0001",
+        step_id="s11::cp::0001",
         t=1,
-        checkpoint_type="schema_linking",
+        step_type="schema_linking",
         content={"kind": "sql_clause", "text": "FROM t", "clause": "FROM"},
     )
-    cp2 = Checkpoint(
+    step2 = Step(
         sample_id="s11",
-        checkpoint_id="s11::cp::0002",
+        step_id="s11::cp::0002",
         t=2,
-        checkpoint_type="column_reference",
+        step_type="column_reference",
         content={"kind": "sql_clause", "text": "x", "clause": "SELECT"},
     )
-    sequence = CheckpointSequence(sample_id="s11", checkpoints=[cp, cp2], protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s11", steps=[step, step2], protocol_hash="a" * 64)
     dep_sets = [
-        DependencySet(sample_id="s11", checkpoint_id="s11::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
-        DependencySet(sample_id="s11", checkpoint_id="s11::cp::0002", t=2, E_minus=["s11::cp::0001"], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
+        DependencySet(sample_id="s11", step_id="s11::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
+        DependencySet(sample_id="s11", step_id="s11::cp::0002", t=2, E_minus=["s11::cp::0001"], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
     ]
     context = {
         "verification_results": [
             {
-                "checkpoint_id": "s11::cp::0002",
+                "step_id": "s11::cp::0002",
                 "rule_type": "type",
                 "unverifiable": True,
                 "passed": False,

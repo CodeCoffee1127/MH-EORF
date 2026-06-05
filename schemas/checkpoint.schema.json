@@ -1,9 +1,15 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Checkpoint",
-  "description": "A single checkpoint in a reasoning trace (Section 3.2)",
+  "title": "Step",
+  "description": "A single step in a reasoning trace (Section 3.2)",
   "type": "object",
-  "required": ["sample_id", "checkpoint_id", "t", "checkpoint_type", "content"],
+  "required": [
+    "sample_id",
+    "step_id",
+    "t",
+    "step_type",
+    "content"
+  ],
   "properties": {
     "sample_id": {
       "type": "string",
@@ -11,12 +17,12 @@
     },
     "checkpoint_id": {
       "type": "string",
-      "description": "Unique checkpoint identifier, format: {sample_id}::cp::{t:04d}"
+      "description": "Unique step identifier, format: {sample_id}::cp::{t:04d}"
     },
     "t": {
       "type": "integer",
       "minimum": 1,
-      "description": "Checkpoint sequence number (1-indexed)"
+      "description": "Step sequence number (1-indexed)"
     },
     "checkpoint_type": {
       "type": "string",
@@ -30,18 +36,33 @@
       "description": "Type of reasoning step"
     },
     "content": {
-      "description": "Checkpoint content (SQL fragment, reasoning step, etc.)",
+      "description": "Step content (SQL fragment, reasoning step, etc.)",
       "anyOf": [
-        { "type": "object" },
-        { "type": "string" },
-        { "type": "array" },
-        { "type": "number" },
-        { "type": "boolean" },
-        { "type": "null" }
+        {
+          "type": "object"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "source_span": {
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "description": "Source span in original trace (optional)"
     },
     "metadata": {

@@ -1,12 +1,12 @@
-# SL-RDAF: Checkpoint-Level Multi-Horizon Reliability Diagnosis for LLM-Based Agent Systems in Industrial IoT
+# SL-RDAF: Step-Level Multi-Horizon Early Warning of Intermediate-State Degradation for LLM-Based Agentic Systems in Industrial IoT
 
-This repository contains the code package for constructing checkpoint-level observable representations used in the SL-RDAF study.
+This repository contains the code package for constructing step-level observable representations used in the SL-RDAF study.
 
 ---
 
 ## Paper
 
-Checkpoint-Level Multi-Horizon Reliability Diagnosis for LLM-Based Agent Systems in Industrial IoT  
+Step-Level Multi-Horizon Early Warning of Intermediate-State Degradation for LLM-Based Agentic Systems in Industrial IoT
 Submitted to IEEE Internet of Things Journal.
 
 *Author identities are withheld to maintain double-blind review integrity.*
@@ -15,9 +15,9 @@ Submitted to IEEE Internet of Things Journal.
 
 ## Scope
 
-This repository focuses on **Section 3.2, Checkpoint-level Observable Representation**:
+This repository focuses on **Section 3.2, Step-Level Observable Representation**:
 
-- checkpoint sequence construction;
+- intermediate-state sequence construction;
 - verification result generation;
 - historical dependency set extraction;
 - perturbation response record generation;
@@ -25,9 +25,9 @@ This repository focuses on **Section 3.2, Checkpoint-level Observable Representa
 
 **Out of scope** (not included in this repository):
 
-- downstream diagnostic feature construction;
+- downstream degradation feature construction;
 - verification entropy feature computation;
-- recursive reliability model training;
+- recursive degradation model training;
 - calibration;
 - threshold selection;
 - heldout evaluation;
@@ -38,7 +38,7 @@ This repository focuses on **Section 3.2, Checkpoint-level Observable Representa
 
 ## Experimental Methodology
 
-The full study employs Text-to-SQL structured reasoning tasks as the experimental carrier. The Agent reasoning process for sample $i$ is represented as a checkpoint sequence $p_{i,1:T_i}$. At each checkpoint $p_{i,t}$, the system records the verification result $v_{i,t}$, historical dependency set $\mathcal{E}^{-}_{i,t}$, and perturbation response record $\mathcal{R}_{i,t}$. These observation planes are used to generate diagnostic metrics such as verification consistency, verification entropy, dependency polarity, and historical risk memory.
+The full study employs Text-to-SQL structured reasoning tasks as the experimental carrier. The Agent reasoning process for sample $i$ is represented as an intermediate-state sequence $p_{i,1:T_i}$. At each step $p_{i,t}$, the system records the verification result $v_{i,t}$, historical dependency set $\mathcal{E}^{-}_{i,t}$, and perturbation response record $\mathcal{R}_{i,t}$. These observation planes are used to generate degradation metrics such as verification consistency, verification entropy, dependency polarity, and historical risk memory.
 
 ### Model Architecture
 
@@ -50,10 +50,10 @@ The main model retains a dual-channel design separating the **direction channel*
 |---------|-----------|--------|
 | $x^{dir}_{i,t}$ | 5 | $1-A_{i,t}$, $H_{i,t}$, $\rho_{i,t}$, $I^-_{i,t}$, $I^+_{i,t}$ |
 | $x^{res}_{i,t}$ | 11 | $U_{i,t}$, $\Delta(1-A_{i,t})$, $\Delta H_{i,t}$, $\log(1+t)$, phase one-hot, complexity tier one-hot |
-| $s_{i,t}$ | 8 | Recursive reliability state |
+| $s_{i,t}$ | 8 | Recursive degradation state |
 | **Parameters** | **167** | Learnable model weights |
 
-The direction channel preserves variables with explicit risk directions, while the residual channel preserves local changes and context information. The recursive reliability state uses an 8-dimensional representation. The model contains 167 learnable weight parameters, corresponding to 10,788 full checkpoint observation rows (observation rows / parameter ratio $\approx 64.6$).
+The direction channel preserves variables with explicit risk directions, while the residual channel preserves local changes and context information. The recursive degradation state uses an 8-dimensional representation. The model contains 167 learnable weight parameters, corresponding to 10,788 full step observation rows (observation rows / parameter ratio $\approx 64.6$).
 
 ### Data Splits and Evaluation
 
@@ -63,7 +63,7 @@ The experiment uses three mutually exclusive subsets: **train-dev**, **cal-dev**
 - **cal-dev**: Used for fitting calibration mappings and freezing multi-horizon thresholds.
 - **heldout**: Used exclusively for final evaluation under frozen rules.
 
-External measurement diagnosis, early warning performance evaluation, and structural ablation are all conducted under the same observation and decision boundaries.
+External measurement analysis, early warning performance evaluation, and structural ablation are all conducted under the same observation and decision boundaries.
 
 **Table 1(b): Data splits and multi-horizon label statistics**
 
@@ -88,20 +88,20 @@ O_i = {(p_{i,t}, v_{i,t}, E^{-}_{i,t}, R_{i,t})}_{t=1}^{T_i}
 
 where:
 
-- *p_{i,t}*: checkpoint;
+- *p_{i,t}*: intermediate state;
 - *v_{i,t}*: verification result;
 - *E^{-}_{i,t}*: historical dependency set;
 - *R_{i,t}*: perturbation response record.
 
-The observation plane uses only current and historical information available up to checkpoint *t*. It excludes future checkpoints, degradation labels, final execution labels, and downstream model predictions.
+The observation plane uses only current and historical information available up to step *t*. It excludes future steps, degradation labels, final execution labels, and downstream model predictions.
 
 ---
 
 ## Repository Structure
 
 ```
-src/slrdaf/observation/
-  checkpoints.py          — Checkpoint sequence construction
+src/mhiedew/observation/
+  checkpoints.py          — Intermediate-state sequence construction
   verification.py         — Verification rule engine
   dependencies.py         — Historical dependency set extraction
   perturbations.py        — Perturbation response generation
@@ -113,7 +113,7 @@ src/slrdaf/observation/
 experiments/
   build_observation_plane.py          — CLI builder (preview & dataset modes)
   validate_observation_plane.py       — CLI validator
-  preview_checkpoint_sequences.py     — Preview checkpoint outputs
+  preview_checkpoint_sequences.py     — Preview intermediate-state outputs
   preview_verification_results.py     — Preview verification outputs
   preview_dependency_sets.py          — Preview dependency outputs
   preview_perturbation_responses.py   — Preview perturbation outputs
@@ -157,8 +157,8 @@ The observation-plane construction follows a frozen protocol to ensure determini
 | `random_seed` | `20260528` | Frozen |
 | `protocol_hash` | `52e2ab6a1388caa639e49669054d22ab9af6fd10ea4d7f15d994538f43d49430` | Verified |
 | `split policy` | train-dev / cal-dev / heldout | Frozen |
-| **Full build status** | **903 samples, 3,553 checkpoints** | Deterministic regex-based segmentation |
-| **Preview build status** | **5 samples, 21 checkpoints, 63 verification results, 21 dependency sets, 52 perturbation responses** | Verified |
+| **Full build status** | **903 samples, 3,553 intermediate states** | Deterministic regex-based segmentation |
+| **Preview build status** | **5 samples, 21 intermediate states, 63 verification results, 21 dependency sets, 52 perturbation responses** | Verified |
 
 ### Unconfirmed Protocol Items
 
@@ -194,16 +194,16 @@ python experiments\build_observation_plane.py ^
   --source-mode dataset
 ```
 
-This step reconstructs the checkpoint-level observation planes $O_i = \{(p_{i,t}, v_{i,t}, \mathcal{E}^{-}_{i,t}, \mathcal{R}_{i,t})\}_{t=1}^{T_i}$ for all 903 samples across the train-dev, cal-dev, and heldout splits. The full dataset contains 10,788 observation rows. The local deterministic build produces 3,553 checkpoints via regex-based segmentation; matching the full 10,788 rows requires AST-level extraction or downstream feature-stage artifacts. See [`FULL_BUILD_ATTEMPT_REPORT.md`](FULL_BUILD_ATTEMPT_REPORT.md) for details.
+This step reconstructs the step-level observation planes $O_i = \{(p_{i,t}, v_{i,t}, \mathcal{E}^{-}_{i,t}, \mathcal{R}_{i,t})\}_{t=1}^{T_i}$ for all 903 samples across the train-dev, cal-dev, and heldout splits. The full dataset contains 10,788 observation rows. The local deterministic build produces 3,553 intermediate states via regex-based segmentation; matching the full 10,788 rows requires AST-level extraction or downstream feature-stage artifacts. See [`FULL_BUILD_ATTEMPT_REPORT.md`](FULL_BUILD_ATTEMPT_REPORT.md) for details.
 
-### 3. Downstream diagnostic modeling (out of scope for this repository)
+### 3. Downstream degradation modeling (out of scope for this repository)
 
-The observation planes generated above serve as the foundation for the full multi-horizon reliability diagnosis pipeline:
+The observation planes generated above serve as the foundation for the full multi-horizon degradation early warning pipeline:
 
 - **Feature construction**: Derive verification consistency, verification entropy, dependency polarity, and historical risk memory from $O_i$.
 - **Main model training**: Learn the 167-weight dual-channel model (direction channel $x^{dir}_{i,t}$ and residual channel $x^{res}_{i,t}$ with 8-dimensional recursive state $s_{i,t}$) on the **train-dev** split (324 samples, 3,928 rows).
 - **Calibration & threshold freezing**: Fit calibration mappings and freeze multi-horizon thresholds on the **cal-dev** split (214 samples, 2,571 rows).
-- **Final evaluation**: Run frozen-rule evaluation on the **heldout** split (365 samples, 4,289 rows). All external measurement diagnosis, early warning performance evaluation, and structural ablation are conducted under the same observation and decision boundaries.
+- **Final evaluation**: Run frozen-rule evaluation on the **heldout** split (365 samples, 4,289 rows). All external measurement analysis, early warning performance evaluation, and structural ablation are conducted under the same observation and decision boundaries.
 
 The training, calibration, and evaluation code is not included in this §3.2-only repository. The provided observation-plane artifacts and protocol definitions are sufficient to reproduce the input representation for downstream experiments.
 
@@ -272,7 +272,7 @@ The following migration and audit reports are included in the repository:
 - [`FULL_BUILD_ATTEMPT_REPORT.md`](FULL_BUILD_ATTEMPT_REPORT.md) — Full build attempt results
 - [`CODE_BOUNDARY_AUDIT.md`](CODE_BOUNDARY_AUDIT.md) — Code boundary audit results
 - [`GITHUB_RELEASE_AUDIT.md`](GITHUB_RELEASE_AUDIT.md) — Pre-release audit & .gitignore rationale
-- [`CHECKPOINT_MIGRATION_REPORT.md`](CHECKPOINT_MIGRATION_REPORT.md) — Checkpoint extraction migration
+- [`STEP_MIGRATION_REPORT.md`](STEP_MIGRATION_REPORT.md) — Step extraction migration
 - [`VERIFICATION_MIGRATION_REPORT.md`](VERIFICATION_MIGRATION_REPORT.md) — Verification engine migration
 - [`DEPENDENCY_MIGRATION_REPORT.md`](DEPENDENCY_MIGRATION_REPORT.md) — Dependency extraction migration
 - [`PERTURBATION_MIGRATION_REPORT.md`](PERTURBATION_MIGRATION_REPORT.md) — Perturbation response migration
@@ -291,7 +291,7 @@ BibTeX placeholder:
 
 ```bibtex
 @article{slrdaf2026,
-  title={Checkpoint-Level Multi-Horizon Reliability Diagnosis for LLM-Based Agent Systems in Industrial IoT},
+  title={Step-Level Multi-Horizon Early Warning of Intermediate-State Degradation for LLM-Based Agentic Systems in Industrial IoT},
   journal={IEEE Internet of Things Journal},
   year={2026},
   note={Submitted}

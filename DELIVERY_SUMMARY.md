@@ -2,26 +2,26 @@
 
 ## 1. Completed Scope
 ✅ **Protocol Freeze**: `FROZEN_PROTOCOL_MANIFEST.json` & `configs/observation_protocol.yaml` generated. Temperature=0, seed=20260528, split policy frozen.
-✅ **Checkpoint Extraction**: `src/slrdaf/observation/checkpoints.py` implements `build_checkpoint_sequence()`. Supports structured trace, generated SQL, and raw output parsing.
-✅ **Verification Rule Engine**: `src/slrdaf/observation/verification.py` implements `load_rule_library()`, `verify_checkpoint()`, `verify_checkpoint_sequence()`. Three core rules: syntax, type, execution-side consistency.
-✅ **Dependency Extraction**: `src/slrdaf/observation/dependencies.py` implements `extract_dependency_set()`, `extract_all_dependency_sets()`. Four evidence types: SQL clause order, identifier overlap, explicit parent, verification trigger.
-✅ **Perturbation Response Generation**: `src/slrdaf/observation/perturbations.py` implements `load_perturbation_families()`, `perturb_checkpoint()`, `generate_perturbation_responses()`. Four deterministic families: identifier mask, operator flip, value shift, clause marker noise.
-✅ **Observation Plane Assembly**: `src/slrdaf/observation/observation_plane.py` implements `build_observation_plane()`, `assemble_observation_plane()`. Full CLI support in `experiments/build_observation_plane.py`.
+✅ **Step Extraction**: `src/mhiedew/observation/steps.py` implements `build_step_sequence()`. Supports structured trace, generated SQL, and raw output parsing.
+✅ **Verification Rule Engine**: `src/mhiedew/observation/verification.py` implements `load_rule_library()`, `verify_step()`, `verify_step_sequence()`. Three core rules: syntax, type, execution-side consistency.
+✅ **Dependency Extraction**: `src/mhiedew/observation/dependencies.py` implements `extract_dependency_set()`, `extract_all_dependency_sets()`. Four evidence types: SQL clause order, identifier overlap, explicit parent, verification trigger.
+✅ **Perturbation Response Generation**: `src/mhiedew/observation/perturbations.py` implements `load_perturbation_families()`, `perturb_step()`, `generate_perturbation_responses()`. Four deterministic families: identifier mask, operator flip, value shift, clause marker noise.
+✅ **Observation Plane Assembly**: `src/mhiedew/observation/observation_plane.py` implements `build_observation_plane()`, `assemble_observation_plane()`. Full CLI support in `experiments/build_observation_plane.py`.
 ✅ **Repository Cleanup**: Code boundary audit completed. No downstream features, training, or visualization code in §3.2 modules. 64/64 tests passing.
 ✅ **Figshare Package Preparation**: `submission/figshare/SL-RDAF-data-v1/` generated with 95 files, ~127 MB. Includes raw data, observation planes, schemas, protocol, and 12 migration reports. Sensitive info scanned and redacted.
 
 ## 2. Code Entry Points
-- `src/slrdaf/observation/checkpoints.py` — Checkpoint sequence construction
-- `src/slrdaf/observation/verification.py` — Verification rule engine
-- `src/slrdaf/observation/dependencies.py` — Dependency set extraction
-- `src/slrdaf/observation/perturbations.py` — Perturbation response generation
-- `src/slrdaf/observation/observation_plane.py` — Observation plane assembly
+- `src/mhiedew/observation/steps.py` — Step sequence construction
+- `src/mhiedew/observation/verification.py` — Verification rule engine
+- `src/mhiedew/observation/dependencies.py` — Dependency set extraction
+- `src/mhiedew/observation/perturbations.py` — Perturbation response generation
+- `src/mhiedew/observation/observation_plane.py` — Observation plane assembly
 - `experiments/build_observation_plane.py` — CLI builder (preview & dataset modes)
 - `experiments/validate_observation_plane.py` — CLI validator
 
 ## 3. Main Outputs
 ### Preview Mode (5 samples)
-- `artifacts/observation_plane/checkpoints.jsonl` (7.7 KB)
+- `artifacts/observation_plane/steps.jsonl` (7.7 KB)
 - `artifacts/observation_plane/verification_results.jsonl` (25.3 KB)
 - `artifacts/observation_plane/dependency_sets.jsonl` (13.9 KB)
 - `artifacts/observation_plane/perturbation_responses.jsonl` (102.1 KB)
@@ -30,7 +30,7 @@
 - `artifacts/observation_plane/observation_plane_validation_report.json`
 
 ### Full Build (903 samples)
-- `artifacts/observation_plane_full/checkpoints.jsonl` (1.3 MB)
+- `artifacts/observation_plane_full/steps.jsonl` (1.3 MB)
 - `artifacts/observation_plane_full/verification_results.jsonl` (4.3 MB)
 - `artifacts/observation_plane_full/dependency_sets.jsonl` (0 B, empty in dataset mode due to flattening logic)
 - `artifacts/observation_plane_full/perturbation_responses.jsonl` (14.0 MB)
@@ -75,15 +75,15 @@ The following items remain **unconfirmed** in the local final protocol. They are
 ## 8. Full Build Status
 - **Dataset mode**: ✅ Successfully processed all 903 samples.
 - **Samples**: 903 / 903 (100%)
-- **Checkpoints**: 3,553 (deterministic regex-based SQL segmentation)
-- **Original dataset checkpoints**: 10,788 (AST-level extraction)
+- **Steps**: 3,553 (deterministic regex-based SQL segmentation)
+- **Original dataset steps**: 10,788 (AST-level extraction)
 - **Difference**: Extraction granularity. The §3.2 deterministic build uses lightweight regex segmentation without LLM or external AST parsers. See `FULL_BUILD_ATTEMPT_REPORT.md` for details.
 - **Blockers**: None. Build completed successfully.
 
 ## 9. Recommended Next Actions
 1. **Paper Alignment**: After advisor confirms §II Related Work, update `Data Availability` / `Code Availability` statements in the manuscript.
 2. **Protocol Confirmation**: Manually confirm `llm_version`, `N`/`M`, `rule_library_version`, and `perturbation_family_version` with the paper authors. Update `FROZEN_PROTOCOL_MANIFEST.json` accordingly.
-3. **Full Build Enhancement**: If exact match with 10,788 rows is required, migrate the AST-level checkpoint extraction logic from the old project (requires evaluating dependency and LLM usage constraints).
+3. **Full Build Enhancement**: If exact match with 10,788 rows is required, migrate the AST-level step extraction logic from the old project (requires evaluating dependency and LLM usage constraints).
 4. **License**: Select and add an open-source license (e.g., MIT, Apache 2.0) to `README.md` and the figshare package.
 5. **DOI Reservation**: Reserve a figshare DOI, then update `README.md` and the manuscript with the final citation link.
 

@@ -1,11 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "VerificationResult",
-  "description": "Result of applying a verification rule to a checkpoint (Section 3.2)",
+  "description": "Result of applying a verification rule to a step (Section 3.2)",
   "type": "object",
   "required": [
     "sample_id",
-    "checkpoint_id",
+    "step_id",
     "t",
     "rule_id",
     "rule_type",
@@ -23,12 +23,12 @@
     },
     "checkpoint_id": {
       "type": "string",
-      "description": "Checkpoint identifier"
+      "description": "Step identifier"
     },
     "t": {
       "type": "integer",
       "minimum": 1,
-      "description": "Checkpoint sequence number"
+      "description": "Step sequence number"
     },
     "rule_id": {
       "type": "string",
@@ -47,28 +47,43 @@
     "trigger": {
       "description": "Rule trigger (what triggered this rule)",
       "anyOf": [
-        { "type": "object" },
-        { "type": "string" },
-        { "type": "array" },
-        { "type": "number" },
-        { "type": "boolean" },
-        { "type": "null" }
+        {
+          "type": "object"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
     "passed": {
       "type": "boolean",
-      "description": "Whether the checkpoint passed this rule"
+      "description": "Whether the step passed this rule"
     },
     "unverifiable": {
       "type": "boolean",
-      "description": "Whether the checkpoint is unverifiable (not a verified failure)"
+      "description": "Whether the step is unverifiable (not a verified failure)"
     },
     "message": {
       "type": "string",
       "description": "Human-readable verification message"
     },
     "rule_library_version": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Rule library version (may be null if not confirmed)"
     },
     "protocol_hash": {

@@ -10,7 +10,7 @@
 
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| `src/slrdaf/observation/observation_plane.py` | 增量更新 | 实现 build_observation_plane() 和增强 assemble_observation_plane() |
+| `src/mhiedew/observation/observation_plane.py` | 增量更新 | 实现 build_observation_plane() 和增强 assemble_observation_plane() |
 | `experiments/build_observation_plane.py` | 增量更新 | 支持 preview/dataset/auto 模式 |
 | `experiments/validate_observation_plane.py` | 增量更新 | 完整验证逻辑 |
 | `tests/test_observation_plane_full_build.py` | 新建 | 10 个测试用例 |
@@ -23,7 +23,7 @@
 
 | 文件 | 路径 | 用途 |
 |------|------|------|
-| checkpoint_sequence_preview.jsonl | `artifacts/observation_debug/` | checkpoint 序列预览 |
+| step_sequence_preview.jsonl | `artifacts/observation_debug/` | step 序列预览 |
 | verification_preview.jsonl | `artifacts/observation_debug/` | 验证结果预览 |
 | dependency_sets_preview.jsonl | `artifacts/observation_debug/` | 依赖集合预览 |
 | perturbation_response_preview.jsonl | `artifacts/observation_debug/` | 扰动响应预览 |
@@ -36,7 +36,7 @@
 | 文件 | 路径 | 大小/行数 |
 |------|------|----------|
 | observation_planes.jsonl | `artifacts/observation_plane/` | 5 行 (5 samples) |
-| checkpoints.jsonl | `artifacts/observation_plane/` | 21 行 |
+| steps.jsonl | `artifacts/observation_plane/` | 21 行 |
 | verification_results.jsonl | `artifacts/observation_plane/` | 63 行 |
 | dependency_sets.jsonl | `artifacts/observation_plane/` | 21 行 |
 | perturbation_responses.jsonl | `artifacts/observation_plane/` | 52 行 |
@@ -49,7 +49,7 @@
 
 - **使用模式**: preview
 - **原因**: artifacts/observation_debug/ 下四个 preview 文件均存在
-- **说明**: preview mode 直接读取 preview 结果，不重新运行 checkpoint/verification/dependency/perturbation
+- **说明**: preview mode 直接读取 preview 结果，不重新运行 step/verification/dependency/perturbation
 
 ---
 
@@ -60,7 +60,7 @@ Samples attempted: 5
 Samples succeeded: 5
 Samples skipped: 0
 Total observation planes: 5
-Total checkpoint records: 21
+Total step records: 21
 Total verification results: 63
 Total dependency sets: 21
 Total perturbation responses: 52
@@ -75,11 +75,11 @@ Forbidden field violations: 0
 
 ## 6. 对齐检查结果
 
-- ✅ 每个 checkpoint 生成一个 ObservationRecord
-- ✅ ObservationRecord.p = Checkpoint
-- ✅ ObservationRecord.v = 当前 checkpoint_id 对应的 VerificationResult 列表
-- ✅ ObservationRecord.E_minus = 当前 checkpoint_id 对应 DependencySet.E_minus
-- ✅ ObservationRecord.R = 当前 checkpoint_id 对应的 PerturbationResponse 列表
+- ✅ 每个 step 生成一个 ObservationRecord
+- ✅ ObservationRecord.p = Step
+- ✅ ObservationRecord.v = 当前 step_id 对应的 VerificationResult 列表
+- ✅ ObservationRecord.E_minus = 当前 step_id 对应 DependencySet.E_minus
+- ✅ ObservationRecord.R = 当前 step_id 对应的 PerturbationResponse 列表
 - ✅ record 顺序按 p.t 升序
 - ✅ R.perturbed_predecessor_id 属于当前 record.E_minus
 - ✅ predecessor_t < current_t
@@ -89,7 +89,7 @@ Forbidden field violations: 0
 
 ## 7. Leakage 检查结果
 
-- ✅ future_checkpoint_used: false
+- ✅ future_step_used: false
 - ✅ tau_used: false
 - ✅ final_label_used: false
 - ✅ horizon_label_used: false
@@ -132,7 +132,7 @@ $ pytest tests -q
 
 **测试覆盖**:
 - ✅ 第 3 步原有 16 个测试全部通过
-- ✅ 第 4 步新增 6 个 checkpoint extraction 测试全部通过
+- ✅ 第 4 步新增 6 个 step extraction 测试全部通过
 - ✅ 第 5 步新增 10 个 verification rules 测试全部通过
 - ✅ 第 6 步新增 10 个 dependency extraction 测试全部通过
 - ✅ 第 7 步新增 12 个 perturbation responses 测试全部通过
@@ -175,7 +175,7 @@ calibration, threshold, plot, matplotlib, seaborn, Beta, entropy, score, feature
 | 文件 | 路径 | 用途 |
 |------|------|------|
 | observation_planes.jsonl | `artifacts/observation_plane/` | 完整观测平面 |
-| checkpoints.jsonl | `artifacts/observation_plane/` | 扁平化 checkpoint |
+| steps.jsonl | `artifacts/observation_plane/` | 扁平化 step |
 | verification_results.jsonl | `artifacts/observation_plane/` | 扁平化 verification results |
 | dependency_sets.jsonl | `artifacts/observation_plane/` | 扁平化 dependency sets |
 | perturbation_responses.jsonl | `artifacts/observation_plane/` | 扁平化 perturbation responses |
@@ -195,9 +195,9 @@ calibration, threshold, plot, matplotlib, seaborn, Beta, entropy, score, feature
 | 5 | 能输出 7 个目标文件 | ✅ 通过 |
 | 6 | observation_planes.jsonl 每行包含 sample_id、protocol_hash、observation_plane、leakage_check | ✅ 通过 |
 | 7 | 每个 observation record 包含 p、v、E_minus、R | ✅ 通过 |
-| 8 | E_minus 只含历史 checkpoint | ✅ 通过 |
+| 8 | E_minus 只含历史 step | ✅ 通过 |
 | 9 | 每条 R 的 perturbed_predecessor_id 属于当前 E_minus | ✅ 通过 |
-| 10 | 不包含 future checkpoint | ✅ 通过 |
+| 10 | 不包含 future step | ✅ 通过 |
 | 11 | 不包含 tau_i、final_label、endpoint_accuracy、y_i_t_h | ✅ 通过 |
 | 12 | 不包含 A_i_t、H_i_t、I_plus、I_minus、rho、x_dir、x_res | ✅ 通过 |
 | 13 | unverifiable=True 不被解释为失败 | ✅ 通过 |

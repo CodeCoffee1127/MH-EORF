@@ -147,15 +147,15 @@ def main():
                 valid = False
             prev_t = p["t"]
 
-            cp_id = p.get("checkpoint_id", "")
+            cp_id = p.get("step_id", "")
             if cp_id in seen_cp_ids:
-                report["errors"].append(f"Record {i}, obs {j}: duplicate checkpoint_id {cp_id}")
+                report["errors"].append(f"Record {i}, obs {j}: duplicate step_id {cp_id}")
                 valid = False
             seen_cp_ids.add(cp_id)
 
             # Check E_minus
             for pred_id in obs_rec["E_minus"]:
-                # We can't fully validate without checkpoint map, but check format
+                # We can't fully validate without step map, but check format
                 if not pred_id:
                     report["warnings"].append(f"Record {i}, obs {j}: empty E_minus entry")
 

@@ -18,8 +18,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from slrdaf.observation.protocol import load_protocol
-from slrdaf.observation.checkpoints import Checkpoint, CheckpointSequence
-from slrdaf.observation.verification import load_rule_library, verify_checkpoint_sequence
+from slrdaf.observation.steps import Step, StepSequence
+from slrdaf.observation.verification import load_rule_library, verify_step_sequence
 from slrdaf.observation.dependencies import DependencySet, DependencyEdge, extract_all_dependency_sets
 from slrdaf.observation.perturbations import generate_perturbation_responses
 from slrdaf.observation.observation_plane import assemble_observation_plane, build_observation_plane
@@ -37,21 +37,21 @@ def _load_preview_data(debug_dir: str):
 
 
 def _reconstruct_sequence(cp_rec):
-    """Reconstruct CheckpointSequence from preview record."""
-    checkpoints = []
-    for cp_data in cp_rec.get("checkpoints", []):
-        cp = Checkpoint(
+    """Reconstruct StepSequence from preview record."""
+    steps = []
+    for cp_data in cp_rec.get("steps", []):
+        cp = Step(
             sample_id=cp_data["sample_id"],
-            checkpoint_id=cp_data["checkpoint_id"],
+            step_id=cp_data["step_id"],
             t=cp_data["t"],
-            checkpoint_type=cp_data["checkpoint_type"],
+            step_type=cp_data["step_type"],
             content=cp_data.get("content", {}),
             metadata=cp_data.get("metadata", {}),
         )
-        checkpoints.append(cp)
-    return CheckpointSequence(
+        steps.append(cp)
+    return StepSequence(
         sample_id=cp_rec["sample_id"],
-        checkpoints=checkpoints,
+        steps=steps,
         protocol_hash=cp_rec.get("protocol_hash", ""),
     )
 
@@ -73,7 +73,7 @@ def _reconstruct_dep_sets(dep_rec):
         dep_sets.append(
             DependencySet(
                 sample_id=ds_data["sample_id"],
-                checkpoint_id=ds_data["checkpoint_id"],
+                step_id=ds_data["step_id"],
                 t=ds_data["t"],
                 E_minus=ds_data.get("E_minus", []),
                 dependency_edges=edges,
@@ -113,7 +113,7 @@ def main():
     # 2. Determine source mode
     debug_dir = Path("D:\\SL-RDAF\\artifacts\\observation_debug")
     preview_files_exist = (
-        (debug_dir / "checkpoint_sequence_preview.jsonl").exists()
+        (debug_dir / "step_sequence_preview.jsonl").exists()
         and (debug_dir / "verification_preview.jsonl").exists()
         and (debug_dir / "dependency_sets_preview.jsonl").exists()
         and (debug_dir / "perturbation_response_preview.jsonl").exists()
@@ -145,7 +145,7 @@ def main():
             "samples_succeeded": 0,
             "samples_skipped": 0,
             "total_observation_planes": 0,
-            "total_checkpoint_records": 0,
+            "total_step_records": 0,
             "total_verification_results": 0,
             "total_dependency_sets": 0,
             "total_perturbation_responses": 0,
@@ -157,7 +157,7 @@ def main():
 
     # 5. Build observation planes
     all_planes = []
-    all_checkpoints = []
+    all_steps = []
     all_vrs = []
     all_deps = []
     all_perts = []
@@ -171,7 +171,7 @@ def main():
         "samples_skipped": 0,
         "skip_reasons": [],
         "total_observation_planes": 0,
-        "total_checkpoint_records": 0,
+        "total_step_records": 0,
         "total_verification_results": 0,
         "total_dependency_sets": 0,
         "total_perturbation_responses": 0,
@@ -206,7 +206,7 @@ def main():
                     pert_responses.append(
                         PerturbationResponse(
                             sample_id=pr_data["sample_id"],
-                            checkpoint_id=pr_data["checkpoint_id"],
+                            step_id=pr_data["step_id"],
                             t=pr_data["t"],
                             perturbed_predecessor_id=pr_data["perturbed_predecessor_id"],
                             perturbation_family=pr_data["perturbation_family"],
@@ -228,7 +228,7 @@ def main():
                     vr_list.append(
                         VerificationResult(
                             sample_id=vr_d["sample_id"],
-                            checkpoint_id=vr_d["checkpoint_id"],
+                            step_id=vr_d["step_id"],
                             t=vr_d["t"],
                             rule_id=vr_d["rule_id"],
                             rule_type=vr_d["rule_type"],
@@ -246,7 +246,7 @@ def main():
                 all_planes.append(plane)
 
                 # Flatten outputs
-                for cp in sequence.checkpoints:
+                for cp in sequence.steps:
                     all_checkpoints.append(io.dataclass_to_dict(cp))
                 for vr in vr_list:
                     all_vrs.append(io.dataclass_to_dict(vr))
@@ -257,7 +257,7 @@ def main():
 
                 report["samples_succeeded"] += 1
                 report["total_observation_planes"] += 1
-                report["total_checkpoint_records"] += len(sequence.checkpoints)
+                report["total_checkpoint_records"] += len(sequence.steps)
                 report["total_verification_results"] += len(vr_list)
                 report["total_dependency_sets"] += len(dep_sets)
                 report["total_perturbation_responses"] += len(pert_responses)
@@ -268,7 +268,7 @@ def main():
                     if not rec.R:
                         report["records_with_empty_R"] += 1
 
-                print(f"  [{i+1}] {sequence.sample_id}: {len(sequence.checkpoints)} checkpoints, {len(plane.observation_plane)} records")
+                print(f"  [{i+1}] {sequence.sample_id}: {len(sequence.steps)} steps, {len(plane.observation_plane)} records")
 
             except Exception as e:
                 report["samples_skipped"] += 1
@@ -347,7 +347,7 @@ def main():
                 all_planes.append(plane)
                 
                 # Flatten outputs
-                # Reconstruct sequence from plane to get checkpoints
+                # Reconstruct sequence from plane to get steps
                 # Actually, build_observation_plane returns a plane, we need to extract components
                 # We'll reconstruct them from the plane's records
                 for rec in plane.observation_plane:
@@ -365,7 +365,7 @@ def main():
                 report["total_checkpoint_records"] += len(plane.observation_plane)
                 # Count VRs and deps from records
                 vr_count = sum(len(rec.v) for rec in plane.observation_plane)
-                dep_count = len(plane.observation_plane) # One dep set per checkpoint
+                dep_count = len(plane.observation_plane) # One dep set per step
                 pert_count = sum(len(rec.R) for rec in plane.observation_plane)
                 report["total_verification_results"] += vr_count
                 report["total_dependency_sets"] += dep_count
@@ -386,14 +386,14 @@ def main():
 
     # 6. Write outputs
     io.write_jsonl(all_planes, str(output_path / "observation_planes.jsonl"))
-    io.write_jsonl(all_checkpoints, str(output_path / "checkpoints.jsonl"))
+    io.write_jsonl(all_checkpoints, str(output_path / "steps.jsonl"))
     io.write_jsonl(all_vrs, str(output_path / "verification_results.jsonl"))
     io.write_jsonl(all_deps, str(output_path / "dependency_sets.jsonl"))
     io.write_jsonl(all_perts, str(output_path / "perturbation_responses.jsonl"))
 
     # Compute SHA256
     output_files = {}
-    for fname in ["observation_planes.jsonl", "checkpoints.jsonl", "verification_results.jsonl",
+    for fname in ["observation_planes.jsonl", "steps.jsonl", "verification_results.jsonl",
                   "dependency_sets.jsonl", "perturbation_responses.jsonl"]:
         fpath = output_path / fname
         if fpath.exists():
@@ -405,7 +405,7 @@ def main():
     io.write_json(report, str(output_path / "observation_plane_build_report.json"))
     print(f"\nBuild report written to: {output_path / 'observation_plane_build_report.json'}")
     print(f"Total planes: {report['total_observation_planes']}")
-    print(f"Total checkpoints: {report['total_checkpoint_records']}")
+    print(f"Total steps: {report['total_checkpoint_records']}")
     print(f"Total VRs: {report['total_verification_results']}")
     print(f"Total deps: {report['total_dependency_sets']}")
     print(f"Total perts: {report['total_perturbation_responses']}")

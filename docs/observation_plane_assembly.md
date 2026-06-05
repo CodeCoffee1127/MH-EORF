@@ -1,7 +1,7 @@
 # Observation Plane Assembly
 
-> **创建时间**: 2026-06-03  
-> **步骤**: 第 8 步 — 完整观测平面组装与 CLI 实现  
+> **创建时间**: 2026-06-03
+> **步骤**: 第 8 步 — 完整观测平面组装与 CLI 实现
 > **状态**: ✅ 完成
 
 ---
@@ -13,7 +13,7 @@
 O_i = {(p_{i,t}, v_{i,t}, E_minus_{i,t}, R_{i,t})}_{t=1}^{T_i}
 ```
 
-将 checkpoint sequence、verification results、dependency sets、perturbation responses 组装为完整的观测平面。
+将 step sequence、verification results、dependency sets、perturbation responses 组装为完整的观测平面。
 
 ---
 
@@ -39,7 +39,7 @@ O_i = {(p_{i,t}, v_{i,t}, E_minus_{i,t}, R_{i,t})}_{t=1}^{T_i}
 | 文件 | 说明 |
 |------|------|
 | `observation_planes.jsonl` | 完整观测平面 JSONL |
-| `checkpoints.jsonl` | 扁平化 checkpoint 列表 |
+| `steps.jsonl` | 扁平化 step 列表 |
 | `verification_results.jsonl` | 扁平化 verification result 列表 |
 | `dependency_sets.jsonl` | 扁平化 dependency set 列表 |
 | `perturbation_responses.jsonl` | 扁平化 perturbation response 列表 |
@@ -56,7 +56,7 @@ O_i = {(p_{i,t}, v_{i,t}, E_minus_{i,t}, R_{i,t})}_{t=1}^{T_i}
   "protocol_hash": "cfbcf952...",
   "observation_plane": [
     {
-      "p": {"sample_id": "...", "checkpoint_id": "...", "t": 1, ...},
+      "p": {"sample_id": "...", "step_id": "...", "t": 1, ...},
       "v": [{"rule_id": "...", "rule_type": "syntax", "passed": true, ...}],
       "E_minus": ["q000001::cp::0000"],
       "R": [{"perturbed_predecessor_id": "...", "perturbation_family": "...", ...}]
@@ -76,24 +76,24 @@ O_i = {(p_{i,t}, v_{i,t}, E_minus_{i,t}, R_{i,t})}_{t=1}^{T_i}
 
 ## 5. p/v/E_minus/R 对齐规则
 
-1. 每个 checkpoint 生成一个 ObservationRecord
-2. `p` = Checkpoint
-3. `v` = 当前 checkpoint_id 对应的 VerificationResult 列表
-4. `E_minus` = 当前 checkpoint_id 对应 DependencySet.E_minus
-5. `R` = 当前 checkpoint_id 对应的 PerturbationResponse 列表
+1. 每个 step 生成一个 ObservationRecord
+2. `p` = Step
+3. `v` = 当前 step_id 对应的 VerificationResult 列表
+4. `E_minus` = 当前 step_id 对应 DependencySet.E_minus
+5. `R` = 当前 step_id 对应的 PerturbationResponse 列表
 6. record 顺序按 `p.t` 升序
-7. 若某 checkpoint 无 verification results: `v=[]`
-8. 若某 checkpoint 无 DependencySet: `E_minus=[]`
-9. 若某 checkpoint 无 perturbation responses: `R=[]` (允许，特别是 E_minus=[] 的 t=1 checkpoint)
+7. 若某 step 无 verification results: `v=[]`
+8. 若某 step 无 DependencySet: `E_minus=[]`
+9. 若某 step 无 perturbation responses: `R=[]` (允许，特别是 E_minus=[] 的 t=1 step)
 
 ---
 
 ## 6. E_minus 历史边界
 
-- 只包含历史 checkpoint (predecessor_t < current_t)
-- 不包含当前 checkpoint
-- 不包含未来 checkpoint
-- 不包含不存在 checkpoint
+- 只包含历史 step (predecessor_t < current_t)
+- 不包含当前 step
+- 不包含未来 step
+- 不包含不存在 step
 - 如果无法确定依赖，E_minus=[]
 
 ---
@@ -108,7 +108,7 @@ O_i = {(p_{i,t}, v_{i,t}, E_minus_{i,t}, R_{i,t})}_{t=1}^{T_i}
 
 ## 8. Leakage Boundary
 
-- 不含 future checkpoint
+- 不含 future step
 - 不含 tau_i
 - 不含 final_label
 - 不含 horizon labels (y_i_t_h)

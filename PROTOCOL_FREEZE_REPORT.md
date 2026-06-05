@@ -178,11 +178,11 @@
 
 以下规则在后续迁移步骤中**必须遵守**：
 
-1. ✅ **依赖集合 E_minus 只能包含历史 checkpoint**，不能包含未来信息
+1. ✅ **依赖集合 E_minus 只能包含历史 step**，不能包含未来信息
 2. ✅ **perturbation response 只记录响应**，不计算 I_plus/I_minus 或特征
 3. ✅ **所有随机操作使用 seed=20260528**
 4. ✅ **所有 LLM 调用使用 temperature=0**（如果调用）
-5. ✅ **观测平面输出使用论文符号**：`checkpoint`, `observation_plane`, `verification_result`, `dependency_set`, `perturbation_response`, `E_minus`, `R`
+5. ✅ **观测平面输出使用论文符号**：`step`, `observation_plane`, `verification_result`, `dependency_set`, `perturbation_response`, `E_minus`, `R`
 6. ✅ **所有输出保留可追溯记录**：生成 `observation_plane_build_report.json` 和 `observation_plane_validation_report.json`
 
 ### 7.3 观测平面边界

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """
-Preview verification results from checkpoint sequences.
+Preview verification results from step sequences.
 
-Reads checkpoint preview JSONL, applies verification rules,
+Reads step preview JSONL, applies verification rules,
 and outputs verification preview JSONL + report.
 """
 
@@ -19,8 +19,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from slrdaf.observation.protocol import load_protocol
-from slrdaf.observation.checkpoints import Checkpoint, CheckpointSequence
-from slrdaf.observation.verification import verify_checkpoint_sequence
+from slrdaf.observation.steps import Step, StepSequence
+from slrdaf.observation.verification import verify_step_sequence
 from slrdaf.observation import io
 
 
@@ -40,9 +40,9 @@ def load_schema_context(schema_path: str | None) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="Preview verification results")
     parser.add_argument(
-        "--checkpoint-preview",
+        "--step-preview",
         default="D:\\SL-RDAF\\artifacts\\observation_debug\\checkpoint_sequence_preview.jsonl",
-        help="Path to checkpoint preview JSONL",
+        help="Path to step preview JSONL",
     )
     parser.add_argument("--output", required=True, help="Output directory for preview")
     parser.add_argument(
@@ -67,14 +67,14 @@ def main():
     schema_ctx = load_schema_context(args.schema_context)
     print(f"Schema context loaded: {bool(schema_ctx)}")
 
-    # Load checkpoint preview
-    cp_preview_path = Path(args.checkpoint_preview)
+    # Load step preview
+    cp_preview_path = Path(args.step_preview)
     if not cp_preview_path.exists():
-        print(f"ERROR: Checkpoint preview not found: {cp_preview_path}")
+        print(f"ERROR: Step preview not found: {cp_preview_path}")
         sys.exit(1)
 
     cp_records = io.read_jsonl(str(cp_preview_path))
-    print(f"Loaded {len(cp_records)} checkpoint preview records")
+    print(f"Loaded {len(cp_records)} step preview records")
 
     # Process samples
     output_path = Path(args.output)
@@ -102,24 +102,24 @@ def main():
         report["samples_attempted"] += 1
         try:
             sample_id = rec["sample_id"]
-            checkpoints_data = rec.get("checkpoints", [])
+            checkpoints_data = rec.get("steps", [])
 
-            # Reconstruct checkpoints
-            checkpoints = []
+            # Reconstruct steps
+            steps = []
             for cp_data in checkpoints_data:
-                cp = Checkpoint(
+                cp = Step(
                     sample_id=cp_data["sample_id"],
-                    checkpoint_id=cp_data["checkpoint_id"],
+                    step_id=cp_data["step_id"],
                     t=cp_data["t"],
-                    checkpoint_type=cp_data["checkpoint_type"],
+                    step_type=cp_data["step_type"],
                     content=cp_data.get("content", {}),
                     metadata=cp_data.get("metadata", {}),
                 )
-                checkpoints.append(cp)
+                steps.append(cp)
 
-            sequence = CheckpointSequence(
+            sequence = StepSequence(
                 sample_id=sample_id,
-                checkpoints=checkpoints,
+                steps=steps,
                 protocol_hash=rec.get("protocol_hash", protocol.protocol_hash),
             )
 
@@ -129,7 +129,7 @@ def main():
                 context["schema"] = schema_ctx
 
             # Verify
-            results = verify_checkpoint_sequence(sequence, context, protocol)
+            results = verify_step_sequence(sequence, context, protocol)
             report["samples_succeeded"] += 1
             report["total_verification_results"] += len(results)
 

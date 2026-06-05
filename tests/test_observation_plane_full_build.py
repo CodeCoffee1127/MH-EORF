@@ -10,7 +10,7 @@ from pathlib import Path
 # Add src to path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from slrdaf.observation.checkpoints import Checkpoint, CheckpointSequence
+from slrdaf.observation.checkpoints import Step, StepSequence
 from slrdaf.observation.verification import VerificationResult, load_rule_library
 from slrdaf.observation.dependencies import DependencySet, DependencyEdge
 from slrdaf.observation.perturbations import PerturbationResponse, load_perturbation_families
@@ -27,23 +27,23 @@ class MockProtocol:
 
 def test_assemble_complete_plane():
     """Test assembling a complete observation plane."""
-    checkpoints = [
-        Checkpoint(
+    steps = [
+        Step(
             sample_id="s1",
-            checkpoint_id="s1::cp::0001",
+            step_id="s1::cp::0001",
             t=1,
-            checkpoint_type="schema_linking",
+            step_type="schema_linking",
             content={"kind": "sql_clause", "text": "FROM sensors", "clause": "FROM"},
         ),
-        Checkpoint(
+        Step(
             sample_id="s1",
-            checkpoint_id="s1::cp::0002",
+            step_id="s1::cp::0002",
             t=2,
-            checkpoint_type="column_reference",
+            step_type="column_reference",
             content={"kind": "sql_clause", "text": "temperature", "clause": "SELECT"},
         ),
     ]
-    sequence = CheckpointSequence(sample_id="s1", checkpoints=checkpoints, protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s1", checkpoints=steps, protocol_hash="a" * 64)
 
     vr1 = VerificationResult(
         sample_id="s1", checkpoint_id="s1::cp::0001", t=1,
@@ -93,11 +93,11 @@ def test_assemble_complete_plane():
 
 def test_perturbation_must_belong_to_E_minus():
     """Test that R predecessor must belong to E_minus."""
-    checkpoints = [
-        Checkpoint(sample_id="s2", checkpoint_id="s2::cp::0001", t=1, checkpoint_type="other", content={"text": "x"}),
-        Checkpoint(sample_id="s2", checkpoint_id="s2::cp::0002", t=2, checkpoint_type="other", content={"text": "y"}),
+    steps = [
+        Step(sample_id="s2", step_id="s2::cp::0001", t=1, step_type="other", content={"text": "x"}),
+        Step(sample_id="s2", step_id="s2::cp::0002", t=2, step_type="other", content={"text": "y"}),
     ]
-    sequence = CheckpointSequence(sample_id="s2", checkpoints=checkpoints, protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s2", checkpoints=steps, protocol_hash="a" * 64)
 
     dep_sets = [
         DependencySet(sample_id="s2", checkpoint_id="s2::cp::0001", t=1, E_minus=[], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
@@ -125,11 +125,11 @@ def test_perturbation_must_belong_to_E_minus():
 
 def test_future_E_minus_rejected():
     """Test that future E_minus is rejected."""
-    checkpoints = [
-        Checkpoint(sample_id="s3", checkpoint_id="s3::cp::0001", t=1, checkpoint_type="other", content={"text": "x"}),
-        Checkpoint(sample_id="s3", checkpoint_id="s3::cp::0002", t=2, checkpoint_type="other", content={"text": "y"}),
+    steps = [
+        Step(sample_id="s3", step_id="s3::cp::0001", t=1, step_type="other", content={"text": "x"}),
+        Step(sample_id="s3", step_id="s3::cp::0002", t=2, step_type="other", content={"text": "y"}),
     ]
-    sequence = CheckpointSequence(sample_id="s3", checkpoints=checkpoints, protocol_hash="a" * 64)
+    sequence = StepSequence(sample_id="s3", checkpoints=steps, protocol_hash="a" * 64)
 
     dep_sets = [
         DependencySet(sample_id="s3", checkpoint_id="s3::cp::0001", t=1, E_minus=["s3::cp::0002"], dependency_edges=[], extraction_method="test", protocol_hash="a" * 64),
@@ -140,7 +140,7 @@ def test_future_E_minus_rejected():
         assemble_observation_plane(sequence, [], dep_sets, [], MockProtocol())
         assert False, "Should have raised ValueError"
     except ValueError as e:
-        assert "future checkpoint" in str(e) or "t=2 >= current t=1" in str(e)
+        assert "future step" in str(e) or "t=2 >= current t=1" in str(e)
 
     print("✓ test_future_E_minus_rejected passed")
 
@@ -221,12 +221,12 @@ def test_validation_catches_invalid_R():
         "protocol_hash": "a" * 64,
         "observation_plane": [
             {
-                "p": {"sample_id": "s7", "checkpoint_id": "s7::cp::0001", "t": 1, "checkpoint_type": "other", "content": {}},
+                "p": {"sample_id": "s7", "step_id": "s7::cp::0001", "t": 1, "step_type": "other", "content": {}},
                 "v": [],
                 "E_minus": [],
                 "R": [
                     {
-                        "sample_id": "s7", "checkpoint_id": "s7::cp::0001", "t": 1,
+                        "sample_id": "s7", "step_id": "s7::cp::0001", "t": 1,
                         "perturbed_predecessor_id": "s7::cp::0002",  # Not in E_minus
                         "perturbation_family": "test", "perturbation_id": "test",
                         "perturbation_payload_hash": "b" * 64,

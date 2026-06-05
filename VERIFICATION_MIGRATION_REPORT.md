@@ -10,7 +10,7 @@
 
 | 文件 | 操作 | 说明 |
 |------|------|------|
-| `src/slrdaf/observation/verification.py` | 增量更新 | 实现三类验证规则及 public API |
+| `src/mhiedew/observation/verification.py` | 增量更新 | 实现三类验证规则及 public API |
 | `experiments/preview_verification_results.py` | 新建 | Verification preview 脚本 |
 | `tests/test_verification_rules.py` | 新建 | 10 个测试用例 |
 | `docs/migration_verification_rules.md` | 新建 | 迁移文档 |
@@ -35,13 +35,13 @@
 | 函数 | 类型 | 说明 |
 |------|------|------|
 | `load_rule_library()` | 公开 | 加载三类核心规则 |
-| `verify_checkpoint()` | 公开 | 对单个 checkpoint 应用所有规则 |
-| `verify_checkpoint_sequence()` | 公开 | 对序列中所有 checkpoint 应用规则 |
+| `verify_step()` | 公开 | 对单个 step 应用所有规则 |
+| `verify_step_sequence()` | 公开 | 对序列中所有 step 应用规则 |
 | `_verify_syntax()` | 内部 | Syntax constraint 实现 |
 | `_verify_type()` | 内部 | Type constraint 实现 |
 | `_verify_execution()` | 内部 | Execution-side consistency 实现 |
-| `_extract_checkpoint_text()` | 内部 | 提取 checkpoint 文本 |
-| `_extract_checkpoint_clause()` | 内部 | 提取 SQL clause |
+| `_extract_step_text()` | 内部 | 提取 step 文本 |
+| `_extract_step_clause()` | 内部 | 提取 SQL clause |
 | `_make_result()` | 内部 | 创建 VerificationResult |
 | `_check_balanced_parens()` | 内部 | 检查括号平衡 |
 | `_check_balanced_quotes()` | 内部 | 检查引号平衡 |
@@ -71,7 +71,7 @@ type: 21
 execution_side_consistency: 21
 ```
 
-每个 checkpoint 应用 3 条规则，5 个样本共 63 条结果。
+每个 step 应用 3 条规则，5 个样本共 63 条结果。
 
 ---
 
@@ -129,7 +129,7 @@ $ pytest tests -q
 
 **测试覆盖**:
 - ✅ 第 3 步原有 16 个测试全部通过
-- ✅ 第 4 步新增 6 个 checkpoint extraction 测试全部通过
+- ✅ 第 4 步新增 6 个 step extraction 测试全部通过
 - ✅ 第 5 步新增 10 个 verification rules 测试全部通过
 
 ---
@@ -167,10 +167,10 @@ train, fit, predict, calibration, threshold, plot, matplotlib, seaborn, Beta, en
 
 | 文件 | 路径 | 用途 |
 |------|------|------|
-| Checkpoint Preview | `artifacts/observation_debug/checkpoint_sequence_preview.jsonl` | 提供 checkpoint 序列 |
+| Step Preview | `artifacts/observation_debug/step_sequence_preview.jsonl` | 提供 step 序列 |
 | Verification Preview | `artifacts/observation_debug/verification_preview.jsonl` | 提供验证结果，可作为 dependency rule trigger evidence |
 | Verification Report | `artifacts/observation_debug/verification_preview_report.json` | 了解验证结果分布 |
-| Verification.py | `src/slrdaf/observation/verification.py` | 提供 VerificationResult dataclass 定义 |
+| Verification.py | `src/mhiedew/observation/verification.py` | 提供 VerificationResult dataclass 定义 |
 | Protocol | `FROZEN_PROTOCOL_MANIFEST.json` | 提供 protocol_hash 和配置 |
 
 ---
@@ -179,8 +179,8 @@ train, fit, predict, calibration, threshold, plot, matplotlib, seaborn, Beta, en
 
 | # | 验收标准 | 状态 |
 |---|---------|------|
-| 1 | `verify_checkpoint` 不再 raise NotImplementedError | ✅ 通过 |
-| 2 | `verify_checkpoint_sequence` 不再 raise NotImplementedError | ✅ 通过 |
+| 1 | `verify_step` 不再 raise NotImplementedError | ✅ 通过 |
+| 2 | `verify_step_sequence` 不再 raise NotImplementedError | ✅ 通过 |
 | 3 | `load_rule_library` 返回至少三类规则 | ✅ 通过 (syntax, type, execution_side_consistency) |
 | 4 | VerificationResult 符合 schema | ✅ 通过 |
 | 5 | 第 3/4 步已有测试继续通过 | ✅ 通过 (32/32) |

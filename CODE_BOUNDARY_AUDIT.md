@@ -8,7 +8,7 @@
 
 ## 1. 扫描目录
 
-- `D:\SL-RDAF\src\slrdaf\observation`
+- `D:\SL-RDAF\src\mhiedew\observation`
 - `D:\SL-RDAF\experiments`
 - `D:\SL-RDAF\tests`
 - `D:\SL-RDAF\schemas`
@@ -17,14 +17,14 @@
 
 ## 2. 禁止符号命中表
 
-### 2.1 `src/slrdaf/observation/`
+### 2.1 `src/mhiedew/observation/`
 
 | 文件 | 行号 | 符号 | 类型 | 说明 |
 |------|------|------|------|------|
 | `dependencies.py` | 290 | `risk`, `score` | 文档字符串 | `"""Extract verification context for evidence. Does NOT create risk/score."""` |
 | `leakage.py` | 5 | `training`, `calibration`, `evaluation` | 文档字符串 | `from downstream tasks (training, calibration, evaluation).` |
 | `leakage.py` | 18-46 | `tau_i`, `final_label`, `endpoint_accuracy`, `execution_accuracy`, `A_i_t`, `H_i_t`, `I_plus`, `I_minus`, `Inec`, `rho`, `x_dir`, `x_res`, `s_i_t`, `hazard`, `loss`, `logit` | 黑名单常量 | `FORBIDDEN_FIELD_NAMES` 集合定义，用于防泄漏检查 |
-| `checkpoints.py` | 55-57 | `final_label`, `endpoint_accuracy`, `execution_accuracy`, `tau`, `tau_i`, `y_i_t_h`, `A_i_t`, `H_i_t`, `I_plus`, `I_minus`, `rho`, `x_dir`, `x_res` | 黑名单常量 | `_FORBIDDEN_META_FIELDS` 集合定义，用于过滤 metadata |
+| `steps.py` | 55-57 | `final_label`, `endpoint_accuracy`, `execution_accuracy`, `tau`, `tau_i`, `y_i_t_h`, `A_i_t`, `H_i_t`, `I_plus`, `I_minus`, `rho`, `x_dir`, `x_res` | 黑名单常量 | `_FORBIDDEN_META_FIELDS` 集合定义，用于过滤 metadata |
 
 ### 2.2 `experiments/`
 
@@ -51,7 +51,7 @@
 **结论**: ❌ 否。
 
 所有命中的禁止符号均出现在以下位置：
-- `leakage.py` 和 `checkpoints.py` 中的 **黑名单常量定义**（用于防泄漏检查）
+- `leakage.py` 和 `steps.py` 中的 **黑名单常量定义**（用于防泄漏检查）
 - `dependencies.py` 中的 **文档字符串**（说明不创建 risk/score）
 - `tests/` 中的 **测试断言**（验证输出不包含 forbidden fields）
 - `schemas/` 中的 **描述字符串**（说明 schema 字段用途）
@@ -65,7 +65,7 @@
 | 位置 | 允许原因 |
 |------|---------|
 | `leakage.py` 黑名单 | 必须包含下游字段名称以进行防泄漏扫描 |
-| `checkpoints.py` 黑名单 | 必须包含下游字段名称以过滤 metadata |
+| `steps.py` 黑名单 | 必须包含下游字段名称以过滤 metadata |
 | `dependencies.py` 文档字符串 | 说明本函数不创建 risk/score，属于合规声明 |
 | `tests/` 测试断言 | 必须包含下游字段名称以验证输出合规 |
 | `schemas/` 描述字符串 | 说明 leakage_check 字段的用途，属于 schema 文档 |
@@ -76,7 +76,7 @@
 
 **结论**: ❌ 未发现。
 
-- `src/slrdaf/observation/` 仅包含 §3.2 核心逻辑（checkpoint、verification、dependency、perturbation、observation_plane、protocol、io、leakage）
+- `src/mhiedew/observation/` 仅包含 §3.2 核心逻辑（step、verification、dependency、perturbation、observation_plane、protocol、io、leakage）
 - `experiments/` 仅包含构建和验证脚本
 - `tests/` 仅包含单元测试
 - `schemas/` 仅包含数据 schema 定义

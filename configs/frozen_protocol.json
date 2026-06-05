@@ -5,20 +5,20 @@
   "project_root": "D:\\SL-RDAF",
   "old_project_root": "D:\\SL-RDAF\\Material\\ExternalFalsifiableMeasurementforSubmission",
   "paper": {
-    "title": "Checkpoint-Level Multi-Horizon Reliability Diagnosis for LLM-Based Agent Systems in Industrial IoT",
-    "section_scope": "Section 3.2 Checkpoint-level Observable Representation",
+    "title": "Step-Level Multi-Horizon Degradation Early Warning for LLM-Based Agentic Systems in Industrial IoT",
+    "section_scope": "Section 3.2 Step-level Observable Representation",
     "observation_plane_symbol": "O_i = {(p_i,t, v_i,t, E_minus_i,t, R_i,t)}"
   },
   "scope": {
     "included": [
-      "checkpoint_sequence_construction",
+      "step_sequence_construction",
       "verification_result_generation",
       "dependency_set_E_minus_extraction",
       "perturbation_response_record_generation",
       "observation_plane_assembly"
     ],
     "excluded": [
-      "diagnostic_feature_construction",
+      "analysis_feature_construction",
       "A_i_t",
       "H_i_t",
       "I_plus",
@@ -26,7 +26,7 @@
       "rho",
       "x_dir",
       "x_res",
-      "recursive_reliability_state",
+      "recursive_degradation_state",
       "multi_horizon_training",
       "calibration",
       "threshold_selection",
@@ -124,18 +124,42 @@
       "samples": 324,
       "rows": 3928,
       "multi_horizon": {
-        "h1": { "valid_rows": 1475, "positive": 189, "positive_rate": 0.1281 },
-        "h2": { "valid_rows": 1315, "positive": 310, "positive_rate": 0.2357 },
-        "h3": { "valid_rows": 1138, "positive": 374, "positive_rate": 0.3286 }
+        "h1": {
+          "valid_rows": 1475,
+          "positive": 189,
+          "positive_rate": 0.1281
+        },
+        "h2": {
+          "valid_rows": 1315,
+          "positive": 310,
+          "positive_rate": 0.2357
+        },
+        "h3": {
+          "valid_rows": 1138,
+          "positive": 374,
+          "positive_rate": 0.3286
+        }
       }
     },
     "cal_dev": {
       "samples": 214,
       "rows": 2571,
       "multi_horizon": {
-        "h1": { "valid_rows": 973, "positive": 127, "positive_rate": 0.1305 },
-        "h2": { "valid_rows": 863, "positive": 202, "positive_rate": 0.2341 },
-        "h3": { "valid_rows": 735, "positive": 235, "positive_rate": 0.3197 }
+        "h1": {
+          "valid_rows": 973,
+          "positive": 127,
+          "positive_rate": 0.1305
+        },
+        "h2": {
+          "valid_rows": 863,
+          "positive": 202,
+          "positive_rate": 0.2341
+        },
+        "h3": {
+          "valid_rows": 735,
+          "positive": 235,
+          "positive_rate": 0.3197
+        }
       }
     },
     "heldout": {
@@ -143,24 +167,48 @@
       "rows": 4289,
       "policy": "no_refit_no_calibration_no_threshold_selection",
       "multi_horizon": {
-        "h1": { "valid_rows": 1626, "positive": 210, "positive_rate": 0.1292 },
-        "h2": { "valid_rows": 1436, "positive": 339, "positive_rate": 0.2361 },
-        "h3": { "valid_rows": 1227, "positive": 398, "positive_rate": 0.3244 }
+        "h1": {
+          "valid_rows": 1626,
+          "positive": 210,
+          "positive_rate": 0.1292
+        },
+        "h2": {
+          "valid_rows": 1436,
+          "positive": 339,
+          "positive_rate": 0.2361
+        },
+        "h3": {
+          "valid_rows": 1227,
+          "positive": 398,
+          "positive_rate": 0.3244
+        }
       }
     },
     "total_samples": 903,
     "total_observation_rows": 10788,
     "multi_horizon_aggregate": {
-      "h1": { "valid_rows": 4074, "positive": 526, "positive_rate": 0.1291 },
-      "h2": { "valid_rows": 3614, "positive": 851, "positive_rate": 0.2355 },
-      "h3": { "valid_rows": 3100, "positive": 1007, "positive_rate": 0.3248 }
+      "h1": {
+        "valid_rows": 4074,
+        "positive": 526,
+        "positive_rate": 0.1291
+      },
+      "h2": {
+        "valid_rows": 3614,
+        "positive": 851,
+        "positive_rate": 0.2355
+      },
+      "h3": {
+        "valid_rows": 3100,
+        "positive": 1007,
+        "positive_rate": 0.3248
+      }
     },
     "legacy_value": "[214, 320]",
     "conflict_resolution": "Use SL-RDAF three-way split; legacy binary split is obsolete.",
     "source": [
       "D:\\SL-RDAF\\Material\\SL-RDAF_algorithm_framework_phase1_phase2_phase3.md",
       "D:\\SL-RDAF\\data\\原始数据\\dataset_warning_fixed\\README_dataset_v1.0.md",
-      "D:\\SL-RDAF\\outputs\\diagnostics_4_2\\agent_cluster_package\\README_for_agent_cluster.md"
+      "D:\\SL-RDAF\\outputs\\analysis_4_2\\agent_cluster_package\\README_for_agent_cluster.md"
     ]
   },
   "model_architecture": {
@@ -169,20 +217,33 @@
       "direction": {
         "symbol": "x_dir_i_t",
         "dimension": 5,
-        "fields": ["1-A_i_t", "H_i_t", "rho_i_t", "I_minus_i_t", "I_plus_i_t"],
+        "fields": [
+          "1-A_i_t",
+          "H_i_t",
+          "rho_i_t",
+          "I_minus_i_t",
+          "I_plus_i_t"
+        ],
         "description": "Preserves variables with explicit risk directions"
       },
       "residual": {
         "symbol": "x_res_i_t",
         "dimension": 11,
-        "fields": ["U_i_t", "Delta(1-A_i_t)", "Delta_H_i_t", "log(1+t)", "phase_one-hot", "complexity_tier_one-hot"],
+        "fields": [
+          "U_i_t",
+          "Delta(1-A_i_t)",
+          "Delta_H_i_t",
+          "log(1+t)",
+          "phase_one-hot",
+          "complexity_tier_one-hot"
+        ],
         "description": "Preserves local changes and context information"
       }
     },
     "recursive_state": {
       "symbol": "s_i_t",
       "dimension": 8,
-      "description": "Recursive reliability state"
+      "description": "Recursive correctness state"
     },
     "parameters": {
       "total": 167,
@@ -196,14 +257,14 @@
   },
   "observation_boundary": {
     "allowed_information": [
-      "current_checkpoint",
-      "historical_checkpoints",
+      "current_intermediate-state",
+      "historical_steps",
       "schema_or_database_information_available_at_verification_time",
       "external_rule_results",
       "predecessor_perturbation_responses"
     ],
     "forbidden_information": [
-      "future_checkpoints",
+      "future_steps",
       "tau_i",
       "first_degradation",
       "final_execution_label",
@@ -219,7 +280,7 @@
   "outputs": {
     "primary": "observation_planes.jsonl",
     "auxiliary": [
-      "checkpoints.jsonl",
+      "steps.jsonl",
       "verification_results.jsonl",
       "dependency_sets.jsonl",
       "perturbation_responses.jsonl",

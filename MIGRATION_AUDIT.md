@@ -5,7 +5,7 @@
 > ** OLD_ROOT**: `D:\SL-RDAF\Material\ExternalFalsifiableMeasurementforSubmission`  
 > ** NEW_ROOT**: `D:\SL-RDAF`  
 > ** DATA_SRC**: `D:\SL-RDAF\data\data`  
-> ** 审计目标**: 识别 §3.2 "Checkpoint-level Observable Representation" 可迁移模块，冻结协议参数，区分禁止迁移内容
+> ** 审计目标**: 识别 §3.2 "Step-level Observable Representation" 可迁移模块，冻结协议参数，区分禁止迁移内容
 
 ---
 
@@ -15,7 +15,7 @@
 
 | 文件路径 | 疑似功能 | §3.2 归属 | 禁止迁移 | 理由 |
 |---------|---------|----------|---------|------|
-| `code/step_extractor/step_extractor.py` | VerifierDrivenStepExtractor — 检查点序列构造 | ✅ 是 | ❌ 否 | 核心：检查点序列构造（checkpoint sequence construction） |
+| `code/step_extractor/step_extractor.py` | VerifierDrivenStepExtractor — 检查点序列构造 | ✅ 是 | ❌ 否 | 核心：检查点序列构造（step sequence construction） |
 | `code/step_extractor/segmentation.py` | StructureParse — 结构解析与模板步骤生成 | ✅ 是 | ❌ 否 | 核心：检查点分段与结构解析 |
 | `code/step_extractor/schema.py` | StepObject、RuleLibrary、ParseStatus 定义 | ✅ 是 | ❌ 否 | 核心：检查点对象模型与规则库接口 |
 | `code/step_extractor/bridge_sql_pipeline.py` | SQL Pipeline 桥接 | ✅ 是 | ❌ 否 | 核心：SQL 解析管道集成 |
@@ -96,7 +96,7 @@ D:\SL-RDAF\
 - NEW_ROOT 已实现完整的 Phase 1-3 框架
 - 包含训练、校准、评估、消融等完整流程
 - **缺少独立的 §3.2 观测平面生成模块**（当前数据管道直接生成 model-ready tensors）
-- 数据源 `data/data/` 包含 `feature_manifest.json`，但未发现独立的 checkpoint/observation_plane 输出
+- 数据源 `data/data/` 包含 `feature_manifest.json`，但未发现独立的 step/observation_plane 输出
 
 ---
 
@@ -167,7 +167,7 @@ D:\SL-RDAF\
 ```
 D:\SL-RDAF\
 ├── src\                          # 迁移后的 §3.2 核心代码
-│   ├── checkpoint\               # 检查点序列构造
+│   ├── step\               # 检查点序列构造
 │   │   ├── __init__.py
 │   │   ├── extractor.py          # ← step_extractor.py (重命名)
 │   │   ├── segmentation.py       # ← segmentation.py
@@ -189,9 +189,9 @@ D:\SL-RDAF\
 │       └── parquet_writer.py     # Parquet 输出
 ├── experiments\                  # 实验脚本（仅 §3.2 相关）
 │   ├── generate_observation_planes.py
-│   └── verify_checkpoint_sequence.py
+│   └── verify_step_sequence.py
 ├── tests\                        # 测试
-│   ├── test_checkpoint_extractor.py
+│   ├── test_step_extractor.py
 │   ├── test_verification_engine.py
 │   ├── test_dependency_extractor.py
 │   └── test_perturbation_response.py
@@ -227,7 +227,7 @@ D:\SL-RDAF\
 
 ### 6.4 命名体系确认
 
-1. **Checkpoint vs Step**: 旧项目使用 `StepObject`，论文使用 `checkpoint`。是否统一为 `checkpoint`？
+1. **Step vs Step**: 旧项目使用 `StepObject`，论文使用 `step`。是否统一为 `step`？
 2. **Observation Plane vs Observation**: 旧项目未使用 `observation_plane` 术语。是否采用论文符号？
 3. **E_minus vs dependency_edges**: 旧项目使用 `dependency_edges`，论文使用 `E_minus`。是否统一？
 
@@ -237,14 +237,14 @@ D:\SL-RDAF\
 
 ### 7.1 旧项目论文
 
-- **标题**: Beyond Endpoint Accuracy: Externally Verifiable Diagnosis of Neural Reasoning Reliability in Large Language Models
+- **标题**: Beyond Endpoint Accuracy: Externally Verifiable Analysis of Neural Reasoning Degradation in Large Language Models
 - **LaTeX 主文件**: `Material/ExternalFalsifiableMeasurementforSubmission/paper_sources/paper1.tex`
 - **PDF 位置**: 未找到 paper1.pdf（仅找到 figures/ 下的图表 PDF）
 - **状态**: Submitted to Information Sciences
 
 ### 7.2 新项目论文
 
-- **标题**: Checkpoint-Level Multi-Horizon Reliability Diagnosis for LLM-Based Agent Systems in Industrial IoT
+- **标题**: Step-Level Multi-Horizon Degradation Analysis for LLM-Based Agent Systems in Industrial IoT
 - **LaTeX 主文件**: 未找到（可能在 `Material/` 下，但未发现 .tex 文件）
 - **PDF 位置**: 未找到
 - **实验设计文档**: `Material/SL-RDAF 实验设计方案.md`
@@ -253,7 +253,7 @@ D:\SL-RDAF\
 ### 7.3 §3.2 内容定位
 
 **旧项目 paper1.tex §3.2 对应内容**：
-- CPFC (Checkpoint-level Falsifiable Measurement)
+- CPFC (Step-level Falsifiable Measurement)
 - Verifier-Driven Step Extraction
 - VSP (Verifier Stability Protocol)
 
@@ -300,7 +300,7 @@ D:\SL-RDAF\
 2. **冻结参数**：生成 FROZEN_PROTOCOL_MANIFEST.json
 3. **创建目录结构**：按照第 5 节推荐路径创建 src/、experiments/、tests/
 4. **迁移代码**：复制并重命名第 8.1 节列出的文件
-5. **重构命名**：统一使用论文符号（checkpoint、observation_plane 等）
+5. **重构命名**：统一使用论文符号（step、observation_plane 等）
 6. **生成测试**：为每个迁移模块编写单元测试
 7. **生成文档**：README.md、迁移报告
 
